@@ -17,7 +17,7 @@ const setupKey = require('../key').key
  * // setup key with hmacsha1 factor
  * const setup = await mfkdf.setup.key([
  *   await mfkdf.setup.factors.hmacsha1()
- * ], {size: 8})
+ * ])
  *
  * // calculate response; could be done using hardware device
  * const secret = setup.outputs.hmacsha1.secret
@@ -35,7 +35,6 @@ const setupKey = require('../key').key
  * @param {Array.<MFKDFFactor>} factors - Array of factors used to derive this key
  * @param {Object} [options] - Configuration options
  * @param {string} [options.id='stack'] - Unique identifier for this factor
- * @param {number} [options.size=32] - Size of derived key, in bytes
  * @param {number} [options.threshold] - Number of factors required to derive key; factors.length by default (all required)
  * @param {Buffer} [options.salt] - Cryptographic salt; generated via secure PRG by default (recommended)
  * @param {string} [options.kdf='pbkdf2'] - KDF algorithm to use; pbkdf2, bcrypt, scrypt, argon2i, argon2d, or argon2id
@@ -57,7 +56,9 @@ const setupKey = require('../key').key
 async function stack (factors, options) {
   options = Object.assign(Object.assign({}, defaults.stack), options)
 
-  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
+  }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
   const key = await setupKey(factors, options)

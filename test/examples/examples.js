@@ -12,13 +12,20 @@ suite('examples', () => {
   suite('factors', () => {
     test('stack', async () => {
       // setup key with stack factor
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.stack([
-          await mfkdf.setup.factors.password('password1', { id: 'password1' }),
-          await mfkdf.setup.factors.password('password2', { id: 'password2' })
-        ]),
-        await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.stack([
+            await mfkdf.setup.factors.password('password1', {
+              id: 'password1'
+            }),
+            await mfkdf.setup.factors.password('password2', {
+              id: 'password2'
+            })
+          ]),
+          await mfkdf.setup.factors.password('password3', { id: 'password3' })
+        ],
+        { size: 8 }
+      )
 
       // derive key with stack factor
       const derive = await mfkdf.derive.key(setup.policy, {
@@ -37,14 +44,21 @@ suite('examples', () => {
 
     test('hmacsha1', async () => {
       // setup key with hmacsha1 factor
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.hmacsha1()
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [await mfkdf.setup.factors.hmacsha1()],
+        { size: 8 }
+      )
 
       // calculate response; could be done using hardware device
       const secret = setup.outputs.hmacsha1.secret
-      const challenge = Buffer.from(setup.policy.factors[0].params.challenge, 'hex')
-      const response = crypto.createHmac('sha1', secret).update(challenge).digest()
+      const challenge = Buffer.from(
+        setup.policy.factors[0].params.challenge,
+        'hex'
+      )
+      const response = crypto
+        .createHmac('sha1', secret)
+        .update(challenge)
+        .digest()
 
       // derive key with hmacsha1 factor
       const derive = await mfkdf.derive.key(setup.policy, {
@@ -59,12 +73,15 @@ suite('examples', () => {
 
     test('totp', async () => {
       // setup key with totp factor
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.totp({
-          secret: Buffer.from('hello world'),
-          time: 1650430806597
-        })
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.totp({
+            secret: Buffer.from('hello world'),
+            time: 1650430806597
+          })
+        ],
+        { size: 8 }
+      )
 
       // derive key with totp factor
       const derive = await mfkdf.derive.key(setup.policy, {
@@ -79,9 +96,14 @@ suite('examples', () => {
 
     test('hotp', async () => {
       // setup key with hotp factor
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') })
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.hotp({
+            secret: Buffer.from('hello world')
+          })
+        ],
+        { size: 8 }
+      )
 
       // derive key with hotp factor
       const derive = await mfkdf.derive.key(setup.policy, {
@@ -96,9 +118,14 @@ suite('examples', () => {
 
     test('uuid', async () => {
       // setup key with uuid factor
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.uuid({ uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.uuid({
+            uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+          })
+        ],
+        { size: 8 }
+      )
 
       // derive key with uuid factor
       const derive = await mfkdf.derive.key(setup.policy, {
@@ -113,9 +140,10 @@ suite('examples', () => {
 
     test('question', async () => {
       // setup key with security question factor
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.question('Fido')
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [await mfkdf.setup.factors.question('Fido')],
+        { size: 8 }
+      )
 
       // derive key with security question factor
       const derive = await mfkdf.derive.key(setup.policy, {
@@ -127,18 +155,32 @@ suite('examples', () => {
 
     test('ooba', async () => {
       // setup RSA key pair (on out-of-band server)
-      const keyPair = await crypto.webcrypto.subtle.generateKey({ hash: 'SHA-256', modulusLength: 2048, name: 'RSA-OAEP', publicExponent: new Uint8Array([1, 0, 1]) }, true, ['encrypt', 'decrypt'])
+      const keyPair = await crypto.webcrypto.subtle.generateKey(
+        {
+          hash: 'SHA-256',
+          modulusLength: 2048,
+          name: 'RSA-OAEP',
+          publicExponent: new Uint8Array([1, 0, 1])
+        },
+        true,
+        ['encrypt', 'decrypt']
+      )
 
       // setup key with out-of-band authentication factor
       const setup = await mfkdf.setup.key([
         await mfkdf.setup.factors.ooba({
-          key: keyPair.publicKey, params: { email: 'test@mfkdf.com' }
+          key: keyPair.publicKey,
+          params: { email: 'test@mfkdf.com' }
         })
       ])
 
       // decrypt and send code (on out-of-band server)
       const next = setup.policy.factors[0].params.next
-      const decrypted = await crypto.webcrypto.subtle.decrypt({ name: 'RSA-OAEP' }, keyPair.privateKey, Buffer.from(next, 'hex'))
+      const decrypted = await crypto.webcrypto.subtle.decrypt(
+        { name: 'RSA-OAEP' },
+        keyPair.privateKey,
+        Buffer.from(next, 'hex')
+      )
       const code = JSON.parse(Buffer.from(decrypted).toString()).code
 
       // derive key with out-of-band factor
@@ -154,9 +196,10 @@ suite('examples', () => {
 
     test('password', async () => {
       // setup key with password factor
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.password('password')
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [await mfkdf.setup.factors.password('password')],
+        { size: 8 }
+      )
 
       // derive key with password factor
       const derive = await mfkdf.derive.key(setup.policy, {
@@ -182,17 +225,26 @@ suite('examples', () => {
     const key = await mfkdf.kdf('password', 'salt', 8, config)
     key.toString('hex') // -> 0394a2ede332c9a1
 
-    config.should.deep.equal({ type: 'pbkdf2', params: { rounds: 100000, digest: 'sha256' } })
+    config.should.deep.equal({
+      type: 'pbkdf2',
+      params: { rounds: 100000, digest: 'sha256' }
+    })
     key.toString('hex').should.equal('0394a2ede332c9a1')
   })
 
   test('setup/derive fast', async () => {
     // setup 16 byte 2-of-3-factor multi-factor derived key with a password, HOTP code, and UUID recovery code
-    const setup = await mfkdf.setup.key([
-      await mfkdf.setup.factors.password('password'),
-      await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
-      await mfkdf.setup.factors.uuid({ id: 'recovery', uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
-    ], { threshold: 2, size: 16, kdf: 'pbkdf2', pbkdf2rounds: 1 })
+    const setup = await mfkdf.setup.key(
+      [
+        await mfkdf.setup.factors.password('password'),
+        await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
+        await mfkdf.setup.factors.uuid({
+          id: 'recovery',
+          uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+        })
+      ],
+      { threshold: 2, size: 16, kdf: 'pbkdf2', pbkdf2rounds: 1 }
+    )
 
     // derive key using 2 of the 3 factors
     const derive = await mfkdf.derive.key(setup.policy, {
@@ -208,11 +260,17 @@ suite('examples', () => {
 
   test('setup/derive', async () => {
     // setup 16 byte 2-of-3-factor multi-factor derived key with a password, HOTP code, and UUID recovery code
-    const setup = await mfkdf.setup.key([
-      await mfkdf.setup.factors.password('password'),
-      await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
-      await mfkdf.setup.factors.uuid({ id: 'recovery', uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
-    ], { threshold: 2, size: 16 })
+    const setup = await mfkdf.setup.key(
+      [
+        await mfkdf.setup.factors.password('password'),
+        await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
+        await mfkdf.setup.factors.uuid({
+          id: 'recovery',
+          uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+        })
+      ],
+      { threshold: 2, size: 16 }
+    )
 
     // derive key using 2 of the 3 factors
     const derive = await mfkdf.derive.key(setup.policy, {
@@ -249,7 +307,9 @@ suite('examples', () => {
         await mfkdf.policy.and(
           await mfkdf.setup.factors.password('passwordA', { id: 'passwordA' }),
           await mfkdf.policy.or(
-            await mfkdf.setup.factors.password('passwordB', { id: 'passwordB' }),
+            await mfkdf.setup.factors.password('passwordB', {
+              id: 'passwordB'
+            }),
             await mfkdf.setup.factors.password('passwordC', { id: 'passwordC' })
           )
         )
@@ -267,7 +327,9 @@ suite('examples', () => {
         await mfkdf.policy.and(
           await mfkdf.setup.factors.password('passwordA', { id: 'passwordA' }),
           await mfkdf.policy.or(
-            await mfkdf.setup.factors.password('passwordB', { id: 'passwordB' }),
+            await mfkdf.setup.factors.password('passwordB', {
+              id: 'passwordB'
+            }),
             await mfkdf.setup.factors.password('passwordC', { id: 'passwordC' })
           )
         )
@@ -287,17 +349,25 @@ suite('examples', () => {
         await mfkdf.policy.and(
           await mfkdf.setup.factors.password('passwordA', { id: 'passwordA' }),
           await mfkdf.policy.or(
-            await mfkdf.setup.factors.password('passwordB', { id: 'passwordB' }),
+            await mfkdf.setup.factors.password('passwordB', {
+              id: 'passwordB'
+            }),
             await mfkdf.setup.factors.password('passwordC', { id: 'passwordC' })
           )
         )
       )
 
       // check if key can be derived with passwordA and passwordC
-      const valid1 = await mfkdf.policy.evaluate(setup.policy, ['passwordA', 'passwordC']) // -> true
+      const valid1 = await mfkdf.policy.evaluate(setup.policy, [
+        'passwordA',
+        'passwordC'
+      ]) // -> true
 
       // check if key can be derived with passwordB and passwordC
-      const valid2 = await mfkdf.policy.evaluate(setup.policy, ['passwordB', 'passwordC']) // -> false
+      const valid2 = await mfkdf.policy.evaluate(setup.policy, [
+        'passwordB',
+        'passwordC'
+      ]) // -> false
 
       valid1.should.be.true
       valid2.should.be.false
@@ -309,10 +379,13 @@ suite('examples', () => {
         await mfkdf.policy.and(
           await mfkdf.setup.factors.password('passwordA', { id: 'passwordA' }),
           await mfkdf.policy.or(
-            await mfkdf.setup.factors.password('passwordB', { id: 'passwordB' }),
+            await mfkdf.setup.factors.password('passwordB', {
+              id: 'passwordB'
+            }),
             await mfkdf.setup.factors.password('passwordC', { id: 'passwordC' })
           )
-        ), { size: 8 }
+        ),
+        { size: 8 }
       )
 
       // derive key with passwordA and passwordC (or passwordA and passwordB)
@@ -334,7 +407,8 @@ suite('examples', () => {
           await mfkdf.setup.factors.password('passwordA', { id: 'passwordA' }),
           await mfkdf.setup.factors.password('passwordB', { id: 'passwordB' }),
           await mfkdf.setup.factors.password('passwordC', { id: 'passwordC' })
-        ]), { size: 8 }
+        ]),
+        { size: 8 }
       )
 
       // derive key with passwordA and passwordB and passwordC
@@ -357,7 +431,8 @@ suite('examples', () => {
           await mfkdf.setup.factors.password('passwordA', { id: 'passwordA' }),
           await mfkdf.setup.factors.password('passwordB', { id: 'passwordB' }),
           await mfkdf.setup.factors.password('passwordC', { id: 'passwordC' })
-        ]), { size: 8 }
+        ]),
+        { size: 8 }
       )
 
       // derive key with passwordA (or passwordB or passwordC)
@@ -378,7 +453,8 @@ suite('examples', () => {
           await mfkdf.setup.factors.password('passwordA', { id: 'passwordA' }),
           await mfkdf.setup.factors.password('passwordB', { id: 'passwordB' }),
           await mfkdf.setup.factors.password('passwordC', { id: 'passwordC' })
-        ]), { size: 8 }
+        ]),
+        { size: 8 }
       )
 
       // derive key with passwordA and passwordB (or passwordA and passwordC, or passwordB and passwordC)
@@ -401,7 +477,7 @@ suite('examples', () => {
         await mfkdf.setup.factors.password('password1', { id: 'password1' }),
         await mfkdf.setup.factors.password('password2', { id: 'password2' }),
         await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8 })
+      ])
 
       // change threshold to 2/3
       await setup.setThreshold(2)
@@ -412,19 +488,22 @@ suite('examples', () => {
         password3: mfkdf.derive.factors.password('password3')
       })
 
-      setup.key.toString('hex') // -> 64587f2a0e65dc3c
-      derived.key.toString('hex') // -> 64587f2a0e65dc3c
+      setup.key.toString('hex') // -> 64587f2a0e65dc3c...
+      derived.key.toString('hex') // -> 64587f2a0e65dc3c...
 
       setup.key.toString('hex').should.equal(derived.key.toString('hex'))
     })
 
     test('removeFactor', async () => {
       // setup 2-of-3-factor multi-factor derived key
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.password('password1', { id: 'password1' }),
-        await mfkdf.setup.factors.password('password2', { id: 'password2' }),
-        await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8, threshold: 2 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.password('password1', { id: 'password1' }),
+          await mfkdf.setup.factors.password('password2', { id: 'password2' }),
+          await mfkdf.setup.factors.password('password3', { id: 'password3' })
+        ],
+        { size: 8, threshold: 2 }
+      )
 
       // remove one of the factors
       await setup.removeFactor('password2')
@@ -443,11 +522,14 @@ suite('examples', () => {
 
     test('removeFactors', async () => {
       // setup 1-of-3-factor multi-factor derived key
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.password('password1', { id: 'password1' }),
-        await mfkdf.setup.factors.password('password2', { id: 'password2' }),
-        await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8, threshold: 1 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.password('password1', { id: 'password1' }),
+          await mfkdf.setup.factors.password('password2', { id: 'password2' }),
+          await mfkdf.setup.factors.password('password3', { id: 'password3' })
+        ],
+        { size: 8, threshold: 1 }
+      )
 
       // remove two factors
       await setup.removeFactors(['password1', 'password2'])
@@ -465,11 +547,14 @@ suite('examples', () => {
 
     test('addFactor', async () => {
       // setup 2-of-3-factor multi-factor derived key
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.password('password1', { id: 'password1' }),
-        await mfkdf.setup.factors.password('password2', { id: 'password2' }),
-        await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8, threshold: 2 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.password('password1', { id: 'password1' }),
+          await mfkdf.setup.factors.password('password2', { id: 'password2' }),
+          await mfkdf.setup.factors.password('password3', { id: 'password3' })
+        ],
+        { size: 8, threshold: 2 }
+      )
 
       // add fourth factor
       await setup.addFactor(
@@ -490,11 +575,14 @@ suite('examples', () => {
 
     test('addFactors', async () => {
       // setup 2-of-3-factor multi-factor derived key
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.password('password1', { id: 'password1' }),
-        await mfkdf.setup.factors.password('password2', { id: 'password2' }),
-        await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8, threshold: 2 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.password('password1', { id: 'password1' }),
+          await mfkdf.setup.factors.password('password2', { id: 'password2' }),
+          await mfkdf.setup.factors.password('password3', { id: 'password3' })
+        ],
+        { size: 8, threshold: 2 }
+      )
 
       // add two more factors
       await setup.addFactors([
@@ -516,11 +604,14 @@ suite('examples', () => {
 
     test('recoverFactor', async () => {
       // setup 3-factor multi-factor derived key
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.password('password1', { id: 'password1' }),
-        await mfkdf.setup.factors.password('password2', { id: 'password2' }),
-        await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.password('password1', { id: 'password1' }),
+          await mfkdf.setup.factors.password('password2', { id: 'password2' }),
+          await mfkdf.setup.factors.password('password3', { id: 'password3' })
+        ],
+        { size: 8 }
+      )
 
       // change the 2nd factor
       await setup.recoverFactor(
@@ -542,11 +633,14 @@ suite('examples', () => {
 
     test('recoverFactors', async () => {
       // setup 3-factor multi-factor derived key
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.password('password1', { id: 'password1' }),
-        await mfkdf.setup.factors.password('password2', { id: 'password2' }),
-        await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.password('password1', { id: 'password1' }),
+          await mfkdf.setup.factors.password('password2', { id: 'password2' }),
+          await mfkdf.setup.factors.password('password3', { id: 'password3' })
+        ],
+        { size: 8 }
+      )
 
       // change 2 factors
       await setup.recoverFactors([
@@ -569,11 +663,14 @@ suite('examples', () => {
 
     test('reconstitute', async () => {
       // setup 2-of-3-factor multi-factor derived key
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.password('password1', { id: 'password1' }),
-        await mfkdf.setup.factors.password('password2', { id: 'password2' }),
-        await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8, threshold: 2 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.password('password1', { id: 'password1' }),
+          await mfkdf.setup.factors.password('password2', { id: 'password2' }),
+          await mfkdf.setup.factors.password('password3', { id: 'password3' })
+        ],
+        { size: 8, threshold: 2 }
+      )
 
       // remove 1 factor and add 1 new factor
       await setup.reconstitute(
@@ -597,11 +694,14 @@ suite('examples', () => {
   suite('persistence', () => {
     test('persistence', async () => {
       // setup 3-factor multi-factor derived key
-      const setup = await mfkdf.setup.key([
-        await mfkdf.setup.factors.password('password1', { id: 'password1' }),
-        await mfkdf.setup.factors.password('password2', { id: 'password2' }),
-        await mfkdf.setup.factors.password('password3', { id: 'password3' })
-      ], { size: 8 })
+      const setup = await mfkdf.setup.key(
+        [
+          await mfkdf.setup.factors.password('password1', { id: 'password1' }),
+          await mfkdf.setup.factors.password('password2', { id: 'password2' }),
+          await mfkdf.setup.factors.password('password3', { id: 'password3' })
+        ],
+        { size: 8 }
+      )
 
       // persist one of the factors
       const factor2 = setup.persistFactor('password2')
@@ -623,13 +723,17 @@ suite('examples', () => {
   suite('envelope', () => {
     test('add/get secret', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // add enveloped secret to key
       await key.addEnvelopedSecret('mySecret', Buffer.from('hello world'))
 
       // later... derive key
-      const derived = await mfkdf.derive.key(key.policy, { password: mfkdf.derive.factors.password('password') })
+      const derived = await mfkdf.derive.key(key.policy, {
+        password: mfkdf.derive.factors.password('password')
+      })
 
       // retrieve secret
       const secret = await derived.getEnvelopedSecret('mySecret')
@@ -640,13 +744,17 @@ suite('examples', () => {
 
     test('add/check/remove secret', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // add enveloped secret to key
       await key.addEnvelopedSecret('mySecret', Buffer.from('hello world'))
 
       // later... derive key
-      const derived = await mfkdf.derive.key(key.policy, { password: mfkdf.derive.factors.password('password') })
+      const derived = await mfkdf.derive.key(key.policy, {
+        password: mfkdf.derive.factors.password('password')
+      })
 
       // check secret
       const check1 = derived.hasEnvelopedSecret('mySecret') // -> true
@@ -663,13 +771,17 @@ suite('examples', () => {
 
     test('add/get key', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // add enveloped rsa1024 key
       await key.addEnvelopedKey('myKey', 'rsa1024')
 
       // later... derive key
-      const derived = await mfkdf.derive.key(key.policy, { password: mfkdf.derive.factors.password('password') })
+      const derived = await mfkdf.derive.key(key.policy, {
+        password: mfkdf.derive.factors.password('password')
+      })
 
       // retrieve enveloped key
       const enveloped = await derived.getEnvelopedKey('myKey') // -> PrivateKeyObject
@@ -681,7 +793,9 @@ suite('examples', () => {
   suite('crypto', () => {
     test('getSubkey', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // get 16-byte sub-key for "eth" using hkdf/sha256
       const subkey = await key.getSubkey(16, 'eth', 'sha256')
@@ -690,7 +804,9 @@ suite('examples', () => {
 
     test('getSymmetricKey', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // get 16-byte AES128 sub-key
       const subkey = await key.getSymmetricKey('aes128')
@@ -699,7 +815,9 @@ suite('examples', () => {
 
     test('getAsymmetricKeyPair', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // get 16-byte RSA1024 sub-key
       const subkey = await key.getAsymmetricKeyPair('rsa1024') // -> { privateKey: Uint8Array, publicKey: Uint8Array }
@@ -709,7 +827,9 @@ suite('examples', () => {
 
     test('sign/verify', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // sign message using RSA-1024
       const signature = await key.sign('hello world', 'rsa1024')
@@ -722,7 +842,9 @@ suite('examples', () => {
 
     test('encrypt/decrypt', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // encrypt message using 3DES
       const encrypted = await key.encrypt('hello world', '3des')
@@ -738,61 +860,93 @@ suite('examples', () => {
   suite('auth', () => {
     test('ISO97982PassUnilateralAuthSymmetric', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // challenger: create random challenge
       const challenge = crypto.randomBytes(32)
       const identity = Buffer.from('Challenger')
 
       // responder: generate response
-      const response = await key.ISO97982PassUnilateralAuthSymmetric(challenge, identity)
+      const response = await key.ISO97982PassUnilateralAuthSymmetric(
+        challenge,
+        identity
+      )
 
       // verifier: verify response
       const authKey = await key.ISO9798SymmetricKey()
-      const valid = await mfkdf.auth.VerifyISO97982PassUnilateralAuthSymmetric(challenge, identity, response, authKey) // -> true
+      const valid = await mfkdf.auth.VerifyISO97982PassUnilateralAuthSymmetric(
+        challenge,
+        identity,
+        response,
+        authKey
+      ) // -> true
 
       valid.should.be.true
     })
 
     test('ISO97982PassUnilateralAuthAsymmetric', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // challenger: create random challenge
       const challenge = crypto.randomBytes(32)
       const identity = Buffer.from('Challenger')
 
       // responder: generate response
-      const response = await key.ISO97982PassUnilateralAuthAsymmetric(challenge, identity)
+      const response = await key.ISO97982PassUnilateralAuthAsymmetric(
+        challenge,
+        identity
+      )
 
       // verifier: verify response
       const authKey = await key.ISO9798AsymmetricKey()
-      const valid = await mfkdf.auth.VerifyISO97982PassUnilateralAuthAsymmetric(challenge, identity, response, authKey) // -> true
+      const valid = await mfkdf.auth.VerifyISO97982PassUnilateralAuthAsymmetric(
+        challenge,
+        identity,
+        response,
+        authKey
+      ) // -> true
 
       valid.should.be.true
     })
 
     test('ISO97982PassUnilateralAuthCCF', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
 
       // challenger: create random challenge
       const challenge = crypto.randomBytes(32)
       const identity = Buffer.from('Challenger')
 
       // responder: generate response
-      const response = await key.ISO97982PassUnilateralAuthCCF(challenge, identity)
+      const response = await key.ISO97982PassUnilateralAuthCCF(
+        challenge,
+        identity
+      )
 
       // verifier: verify response
       const authKey = await key.ISO9798CCFKey()
-      const valid = await mfkdf.auth.VerifyISO97982PassUnilateralAuthCCF(challenge, identity, response, authKey) // -> true
+      const valid = await mfkdf.auth.VerifyISO97982PassUnilateralAuthCCF(
+        challenge,
+        identity,
+        response,
+        authKey
+      ) // -> true
 
       valid.should.be.true
     })
 
     test('ISO97981PassUnilateralAuthSymmetric', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
       const identity = Buffer.from('Challenger')
 
       // responder: generate response
@@ -800,14 +954,20 @@ suite('examples', () => {
 
       // verifier: verify response
       const authKey = await key.ISO9798SymmetricKey()
-      const valid = await mfkdf.auth.VerifyISO97981PassUnilateralAuthSymmetric(identity, response, authKey) // -> true
+      const valid = await mfkdf.auth.VerifyISO97981PassUnilateralAuthSymmetric(
+        identity,
+        response,
+        authKey
+      ) // -> true
 
       valid.should.be.true
     })
 
     test('ISO97981PassUnilateralAuthAsymmetric', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
       const identity = Buffer.from('Challenger')
 
       // responder: generate response
@@ -815,14 +975,20 @@ suite('examples', () => {
 
       // verifier: verify response
       const authKey = await key.ISO9798AsymmetricKey()
-      const valid = await mfkdf.auth.VerifyISO97981PassUnilateralAuthAsymmetric(identity, response, authKey) // -> true
+      const valid = await mfkdf.auth.VerifyISO97981PassUnilateralAuthAsymmetric(
+        identity,
+        response,
+        authKey
+      ) // -> true
 
       valid.should.be.true
     })
 
     test('ISO97981PassUnilateralAuthCCF', async () => {
       // setup multi-factor derived key
-      const key = await mfkdf.setup.key([await mfkdf.setup.factors.password('password')])
+      const key = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password')
+      ])
       const identity = Buffer.from('Challenger')
 
       // responder: generate response
@@ -830,7 +996,11 @@ suite('examples', () => {
 
       // verifier: verify response
       const authKey = await key.ISO9798CCFKey()
-      const valid = await mfkdf.auth.VerifyISO97981PassUnilateralAuthCCF(identity, response, authKey) // -> true
+      const valid = await mfkdf.auth.VerifyISO97981PassUnilateralAuthCCF(
+        identity,
+        response,
+        authKey
+      ) // -> true
 
       valid.should.be.true
     })

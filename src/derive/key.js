@@ -26,7 +26,7 @@ const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
  *   await mfkdf.setup.factors.password('password'),
  *   await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
  *   await mfkdf.setup.factors.uuid({ id: 'recovery', uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
- * ], {threshold: 2, size: 16})
+ * ], {threshold: 2})
  *
  * // derive key using 2 of the 3 factors
  * const derive = await mfkdf.derive.key(setup.policy, {
@@ -48,8 +48,10 @@ const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
 async function key (policy, factors) {
   const ajv = new Ajv()
   const valid = ajv.validate(policySchema, policy)
-  if (!valid) throw new TypeError('invalid key policy', ajv.errors)
-  if (Object.keys(factors).length < policy.threshold) { throw new RangeError('insufficient factors provided to derive key') }
+  if (!valid) throw new TypeError('invalid key policy: ' + ajv.errorsText())
+  if (Object.keys(factors).length < policy.threshold) {
+    throw new RangeError('insufficient factors provided to derive key')
+  }
 
   const shares = []
   const newFactors = []
@@ -71,11 +73,11 @@ async function key (policy, factors) {
 
         const pad = Buffer.from(factor.pad, 'base64')
         let stretched = Buffer.from(
-          await hkdf('sha512', material.data, '', '', policy.size)
+          await hkdf('sha512', material.data, '', '', 32)
         )
-        if (Buffer.byteLength(pad) > policy.size) {
+        if (Buffer.byteLength(pad) > 32) {
           stretched = Buffer.concat([
-            Buffer.alloc(Buffer.byteLength(pad) - policy.size),
+            Buffer.alloc(Buffer.byteLength(pad) - 32),
             stretched
           ])
         }
@@ -92,13 +94,15 @@ async function key (policy, factors) {
     }
   }
 
-  if (shares.filter((x) => Buffer.isBuffer(x)).length < policy.threshold) { throw new RangeError('insufficient factors provided to derive key') }
+  if (shares.filter((x) => Buffer.isBuffer(x)).length < policy.threshold) {
+    throw new RangeError('insufficient factors provided to derive key')
+  }
 
   const secret = combine(shares, policy.threshold, policy.factors.length)
   const key = await kdf(
     secret,
     Buffer.from(policy.salt, 'base64'),
-    policy.size,
+    32,
     policy.kdf
   )
 

@@ -39,11 +39,7 @@ if (typeof window !== 'undefined') {
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function getSubkey (
-  size = this.policy.size,
-  purpose = '',
-  digest = 'sha512'
-) {
+async function getSubkey (size = 32, purpose = '', digest = 'sha512') {
   const tag = digest + ';' + size + ';' + purpose
   if (this.subkeys[tag]) return this.subkeys[tag]
   const result = Buffer.from(await hkdf(digest, this.key, '', purpose, size))
@@ -189,7 +185,9 @@ module.exports.getAsymmetricKeyPair = getAsymmetricKeyPair
  */
 async function sign (message, method = 'rsa3072', auth = false) {
   if (typeof message === 'string') message = Buffer.from(message)
-  if (!Buffer.isBuffer(message)) { throw new TypeError('message must be a buffer') }
+  if (!Buffer.isBuffer(message)) {
+    throw new TypeError('message must be a buffer')
+  }
   method = method.toLowerCase()
 
   const key = await this.getAsymmetricKeyPair(method, auth)
@@ -235,7 +233,9 @@ module.exports.sign = sign
  */
 async function verify (message, signature, method = 'rsa3072') {
   if (typeof message === 'string') message = Buffer.from(message)
-  if (!Buffer.isBuffer(message)) { throw new TypeError('message must be a buffer') }
+  if (!Buffer.isBuffer(message)) {
+    throw new TypeError('message must be a buffer')
+  }
   method = method.toLowerCase()
 
   const key = await this.getAsymmetricKeyPair(method)
@@ -284,7 +284,9 @@ module.exports.verify = verify
  */
 async function encrypt (message, method = 'aes256', mode = 'CBC', auth = false) {
   if (typeof message === 'string') message = Buffer.from(message)
-  if (!Buffer.isBuffer(message)) { throw new TypeError('message must be a buffer') }
+  if (!Buffer.isBuffer(message)) {
+    throw new TypeError('message must be a buffer')
+  }
   method = method.toLowerCase()
   mode = mode.toUpperCase()
 
@@ -306,37 +308,37 @@ async function encrypt (message, method = 'aes256', mode = 'CBC', auth = false) 
     )
     const ct = await subtle.encrypt({ name: 'RSA-OAEP' }, cryptoKey, message)
     return Buffer.from(ct)
-  } else if (method === "rsa2048") {
+  } else if (method === 'rsa2048') {
     // RSA 2048
     const cryptoKey = await subtle.importKey(
-      "spki",
+      'spki',
       key.publicKey,
-      { name: "RSA-OAEP", hash: "SHA-256" },
+      { name: 'RSA-OAEP', hash: 'SHA-256' },
       false,
-      ["encrypt"]
-    );
-    const ct = await subtle.encrypt({ name: "RSA-OAEP" }, cryptoKey, message);
-    return Buffer.from(ct);
-  } else /* istanbul ignore if */ if (method === "des") {
+      ['encrypt']
+    )
+    const ct = await subtle.encrypt({ name: 'RSA-OAEP' }, cryptoKey, message)
+    return Buffer.from(ct)
+  } else /* istanbul ignore if */ if (method === 'des') {
     // DES
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(8);
-    cipher = crypto.createCipheriv("DES-" + mode, key, iv);
-  } else if (method === "3des") {
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(8)
+    cipher = crypto.createCipheriv('DES-' + mode, key, iv)
+  } else if (method === '3des') {
     // 3DES
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(8);
-    cipher = crypto.createCipheriv("DES-EDE3-" + mode, key, iv);
-  } else if (method === "aes128") {
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(8)
+    cipher = crypto.createCipheriv('DES-EDE3-' + mode, key, iv)
+  } else if (method === 'aes128') {
     // AES 128
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(16);
-    cipher = crypto.createCipheriv("AES-128-" + mode, key, iv);
-  } else if (method === "aes192") {
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(16)
+    cipher = crypto.createCipheriv('AES-128-' + mode, key, iv)
+  } else if (method === 'aes192') {
     // AES 192
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(16);
-    cipher = crypto.createCipheriv("AES-192-" + mode, key, iv);
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(16)
+    cipher = crypto.createCipheriv('AES-192-' + mode, key, iv)
   } else {
     // AES 256
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(16);
-    cipher = crypto.createCipheriv("AES-256-" + mode, key, iv);
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(16)
+    cipher = crypto.createCipheriv('AES-256-' + mode, key, iv)
   }
 
   return Buffer.concat([iv, cipher.update(message), cipher.final()])
@@ -369,7 +371,9 @@ module.exports.encrypt = encrypt
  * @async
  */
 async function decrypt (message, method = 'aes256', mode = 'CBC') {
-  if (!Buffer.isBuffer(message)) { throw new TypeError('message must be a buffer') }
+  if (!Buffer.isBuffer(message)) {
+    throw new TypeError('message must be a buffer')
+  }
   method = method.toLowerCase()
   mode = mode.toUpperCase()
 
