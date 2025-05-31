@@ -1,11 +1,11 @@
 /**
  * @file MFKDF Policy Evaluation
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Determine whether key can be derived from given factors
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 /**
@@ -32,7 +32,7 @@
  * @param {Object} policy - The key policy for the key being derived
  * @param {Array.<string>} factors - Array of factor ids used to derive this key
  * @returns {boolean} Whether the key can be derived with given factor ids
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @memberOf policy
  */
@@ -46,6 +46,6 @@ function evaluate (policy, factors) {
       if (factors.includes(factor.id)) actual++
     }
   }
-  return (actual >= threshold)
+  return actual >= threshold
 }
 module.exports.evaluate = evaluate

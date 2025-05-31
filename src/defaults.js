@@ -1,11 +1,11 @@
 /**
  * @file Safe MFKDF Defaults
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Secure default configuration for multi-factor key derivation function (MFKDF) and MFKDF factor constructions
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 module.exports.kdf = {

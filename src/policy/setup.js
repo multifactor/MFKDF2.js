@@ -1,11 +1,11 @@
 /**
  * @file MFKDF Policy Setup
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Setup MFKDF key derivation policy
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 const setupKey = require('../setup/key').key
@@ -52,13 +52,13 @@ const validate = require('./validate').validate
  * @param {number} [options.argon2mem=24576] - Memory to use if using argon2
  * @param {number} [options.argon2parallelism=1] - Parallelism to use if using argon2
  * @returns {MFKDFDerivedKey} A multi-factor derived key object
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @memberOf policy
  */
 async function setup (factor, options) {
   const key = await setupKey([factor], options)
-  if (!validate(key.policy)) throw new RangeError('policy contains duplicate ids')
+  if (!validate(key.policy)) { throw new RangeError('policy contains duplicate ids') }
   return key
 }
 module.exports.setup = setup

@@ -1,11 +1,11 @@
 /**
  * @file MFKDF OOBA Factor Derivation
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Derive Out-of-Band Authentication (OOBA) factor for multi-factor key derivation
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 const crypto = require('crypto')
 const xor = require('buffer-xor')
@@ -47,7 +47,7 @@ if (typeof window !== 'undefined') {
  *
  * @param {number} code - The one-time code from which to derive an MFKDF factor
  * @returns {function(config:Object): Promise<MFKDFFactor>} Async function to generate MFKDF factor information
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 1.1.0
  * @memberof derive.factors
  */
@@ -72,8 +72,23 @@ function ooba (code) {
         config.code = code
         const pad = xor(Buffer.from(code), target)
         const plaintext = Buffer.from(JSON.stringify(config))
-        const publicKey = await subtle.importKey('jwk', params.key, { name: 'RSA-OAEP', modulusLength: 2048, hash: 'SHA-256', publicExponent: new Uint8Array([0x01, 0x00, 0x01]) }, false, ['encrypt'])
-        const ciphertext = await subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, plaintext)
+        const publicKey = await subtle.importKey(
+          'jwk',
+          params.key,
+          {
+            name: 'RSA-OAEP',
+            modulusLength: 2048,
+            hash: 'SHA-256',
+            publicExponent: new Uint8Array([0x01, 0x00, 0x01])
+          },
+          false,
+          ['encrypt']
+        )
+        const ciphertext = await subtle.encrypt(
+          { name: 'RSA-OAEP' },
+          publicKey,
+          plaintext
+        )
         return {
           length: params.length,
           key: params.key,
@@ -83,7 +98,7 @@ function ooba (code) {
         }
       },
       output: async () => {
-        return { }
+        return {}
       }
     }
   }

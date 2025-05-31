@@ -1,11 +1,11 @@
 /**
  * @file Multi-Factor Derived Key Reconstitution Functions
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Operations for reconstituting a multi-factor derived key
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 const { hkdf } = require('@panva/hkdf')
@@ -36,7 +36,7 @@ const share = require('../../secrets/share').share
  * derived.key.toString('hex') // -> 64587f2a0e65dc3c
  *
  * @param {number} threshold - New threshold for key derivation
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.14.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -70,7 +70,7 @@ module.exports.setThreshold = setThreshold
  * derived.key.toString('hex') // -> 64587f2a0e65dc3c
  *
  * @param {string} id - ID of existing factor to remove
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.14.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -103,7 +103,7 @@ module.exports.removeFactor = removeFactor
  * derived.key.toString('hex') // -> 64587f2a0e65dc3c
  *
  * @param {Array.<string>} ids - Array of IDs of existing factors to remove
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.14.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -139,7 +139,7 @@ module.exports.removeFactors = removeFactors
  * derived.key.toString('hex') // -> 64587f2a0e65dc3c
  *
  * @param {MFKDFFactor} factor - Factor to add
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.14.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -176,7 +176,7 @@ module.exports.addFactor = addFactor
  * derived.key.toString('hex') // -> 64587f2a0e65dc3c
  *
  * @param {Array.<MFKDFFactor>} factors - Array of factors to add
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.14.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -213,7 +213,7 @@ module.exports.addFactors = addFactors
  * derived.key.toString('hex') // -> 64587f2a0e65dc3c
  *
  * @param {MFKDFFactor} factor - Factor to replace
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.14.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -251,7 +251,7 @@ module.exports.recoverFactor = recoverFactor
  * derived.key.toString('hex') // -> 64587f2a0e65dc3c
  *
  * @param {Array.<MFKDFFactor>} factors - Array of factors to replace
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.14.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -290,15 +290,19 @@ module.exports.recoverFactors = recoverFactors
  * @param {Array.<string>} [removeFactors] - Array of IDs of existing factors to remove
  * @param {Array.<MFKDFFactor>} [addFactors] - Array of factors to add or replace
  * @param {number} [threshold] - New threshold for key derivation; same as current by default
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.14.0
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function reconstitute (removeFactors = [], addFactors = [], threshold = this.policy.threshold) {
-  if (!Array.isArray(removeFactors)) throw new TypeError('removeFactors must be an array')
-  if (!Array.isArray(addFactors)) throw new TypeError('addFactors must be an array')
-  if (!Number.isInteger(threshold)) throw new TypeError('threshold must be an integer')
+async function reconstitute (
+  removeFactors = [],
+  addFactors = [],
+  threshold = this.policy.threshold
+) {
+  if (!Array.isArray(removeFactors)) { throw new TypeError('removeFactors must be an array') }
+  if (!Array.isArray(addFactors)) { throw new TypeError('addFactors must be an array') }
+  if (!Number.isInteger(threshold)) { throw new TypeError('threshold must be an integer') }
   if (threshold <= 0) throw new RangeError('threshold must be positive')
 
   const factors = {}
@@ -312,14 +316,18 @@ async function reconstitute (removeFactors = [], addFactors = [], threshold = th
     const pad = Buffer.from(factor.pad, 'base64')
     const share = this.shares[index]
     let factorMaterial = xor(pad, share)
-    if (Buffer.byteLength(factorMaterial) > this.policy.size) factorMaterial = factorMaterial.subarray(Buffer.byteLength(factorMaterial) - this.policy.size)
+    if (Buffer.byteLength(factorMaterial) > this.policy.size) {
+      factorMaterial = factorMaterial.subarray(
+        Buffer.byteLength(factorMaterial) - this.policy.size
+      )
+    }
     material[factor.id] = factorMaterial
   }
 
   // remove selected factors
   for (const factor of removeFactors) {
-    if (typeof factor !== 'string') throw new TypeError('factor must be a string')
-    if (typeof factors[factor] !== 'object') throw new RangeError('factor does not exist: ' + factor)
+    if (typeof factor !== 'string') { throw new TypeError('factor must be a string') }
+    if (typeof factors[factor] !== 'object') { throw new RangeError('factor does not exist: ' + factor) }
     delete factors[factor]
     delete material[factor]
   }
@@ -327,22 +335,22 @@ async function reconstitute (removeFactors = [], addFactors = [], threshold = th
   // add new factors
   for (const factor of addFactors) {
     // type
-    if (typeof factor.type !== 'string') throw new TypeError('factor type must be a string')
-    if (factor.type.length === 0) throw new RangeError('factor type must not be empty')
+    if (typeof factor.type !== 'string') { throw new TypeError('factor type must be a string') }
+    if (factor.type.length === 0) { throw new RangeError('factor type must not be empty') }
 
     // id
-    if (typeof factor.id !== 'string') throw new TypeError('factor id must be a string')
-    if (factor.id.length === 0) throw new RangeError('factor id must not be empty')
+    if (typeof factor.id !== 'string') { throw new TypeError('factor id must be a string') }
+    if (factor.id.length === 0) { throw new RangeError('factor id must not be empty') }
 
     // data
-    if (!Buffer.isBuffer(factor.data)) throw new TypeError('factor data must be a buffer')
-    if (factor.data.length === 0) throw new RangeError('factor data must not be empty')
+    if (!Buffer.isBuffer(factor.data)) { throw new TypeError('factor data must be a buffer') }
+    if (factor.data.length === 0) { throw new RangeError('factor data must not be empty') }
 
     // params
-    if (typeof factor.params !== 'function') throw new TypeError('factor params must be a function')
+    if (typeof factor.params !== 'function') { throw new TypeError('factor params must be a function') }
 
     // output
-    if (typeof factor.output !== 'function') throw new TypeError('factor output must be a function')
+    if (typeof factor.output !== 'function') { throw new TypeError('factor output must be a function') }
 
     factors[factor.id] = {
       id: factor.id,
@@ -355,12 +363,12 @@ async function reconstitute (removeFactors = [], addFactors = [], threshold = th
   }
 
   // new factor id uniqueness
-  const ids = addFactors.map(factor => factor.id)
-  if ((new Set(ids)).size !== ids.length) throw new RangeError('factor ids must be unique')
+  const ids = addFactors.map((factor) => factor.id)
+  if (new Set(ids).size !== ids.length) { throw new RangeError('factor ids must be unique') }
 
   // threshold correctness
   const n = Object.entries(factors).length
-  if (!(threshold <= n)) throw new RangeError('threshold cannot be greater than number of factors')
+  if (!(threshold <= n)) { throw new RangeError('threshold cannot be greater than number of factors') }
 
   const shares = share(this.secret, threshold, n)
 
@@ -370,9 +378,16 @@ async function reconstitute (removeFactors = [], addFactors = [], threshold = th
     const share = shares[index]
     let stretched = Buffer.isBuffer(material[factor.id])
       ? material[factor.id]
-      : Buffer.from(await hkdf('sha512', data[factor.id], '', '', this.policy.size))
+      : Buffer.from(
+        await hkdf('sha512', data[factor.id], '', '', this.policy.size)
+      )
 
-    if (Buffer.byteLength(share) > this.policy.size) stretched = Buffer.concat([Buffer.alloc(Buffer.byteLength(share) - this.policy.size), stretched])
+    if (Buffer.byteLength(share) > this.policy.size) {
+      stretched = Buffer.concat([
+        Buffer.alloc(Buffer.byteLength(share) - this.policy.size),
+        stretched
+      ])
+    }
 
     factor.pad = xor(share, stretched).toString('base64')
     newFactors.push(factor)

@@ -1,11 +1,11 @@
 /**
  * @file MFKDF Policy Derivation
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Derive key from policy and given factors
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 const validate = require('./validate').validate
@@ -59,7 +59,7 @@ function expand (policy, factors) {
  * @param {Object} policy - The key policy for the key being derived
  * @param {Object.<string, MFKDFFactor>} factors - Factors used to derive this key
  * @returns {MFKDFDerivedKey} A multi-factor derived key object
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @async
  * @memberOf policy
@@ -67,7 +67,7 @@ function expand (policy, factors) {
 async function derive (policy, factors) {
   const ids = Object.keys(factors)
   if (!validate(policy)) throw new TypeError('policy contains duplicate ids')
-  if (!evaluate(policy, ids)) throw new RangeError('insufficient factors to derive key')
+  if (!evaluate(policy, ids)) { throw new RangeError('insufficient factors to derive key') }
 
   const expanded = expand(policy, factors)
 

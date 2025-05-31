@@ -1,11 +1,11 @@
 /**
  * @file MFKDF TOTP Factor Setup
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Setup an TOTP factor for multi-factor key derivation
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 const defaults = require('../../defaults')
 const crypto = require('crypto')
@@ -48,7 +48,7 @@ function mod (n, m) {
  * @param {number} [options.window=87600] - Maximum window between logins, in number of steps (1 month by default)
  * @param {number} [options.step=30] - TOTP step size
  * @returns {MFKDFFactor} MFKDF factor information
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.13.0
  * @async
  * @memberof setup.factors
@@ -56,22 +56,22 @@ function mod (n, m) {
 async function totp (options) {
   options = Object.assign(Object.assign({}, defaults.totp), options)
 
-  if (typeof options.id !== 'string') throw new TypeError('id must be a string')
+  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
-  if (!Number.isInteger(options.digits)) throw new TypeError('digits must be an interger')
+  if (!Number.isInteger(options.digits)) { throw new TypeError('digits must be an interger') }
   if (options.digits < 6) throw new RangeError('digits must be at least 6')
   if (options.digits > 8) throw new RangeError('digits must be at most 8')
-  if (!Number.isInteger(options.step)) throw new TypeError('step must be an interger')
+  if (!Number.isInteger(options.step)) { throw new TypeError('step must be an interger') }
   if (options.step < 0) throw new RangeError('step must be positive')
-  if (!Number.isInteger(options.window)) throw new TypeError('window must be an interger')
+  if (!Number.isInteger(options.window)) { throw new TypeError('window must be an interger') }
   if (options.window < 0) throw new RangeError('window must be positive')
-  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) throw new RangeError('unrecognized hash function')
-  if (!Buffer.isBuffer(options.secret) && typeof options.secret !== 'undefined') throw new TypeError('secret must be a buffer')
+  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) { throw new RangeError('unrecognized hash function') }
+  if (!Buffer.isBuffer(options.secret) && typeof options.secret !== 'undefined') { throw new TypeError('secret must be a buffer') }
   if (typeof options.time === 'undefined') options.time = Date.now()
-  if (!Number.isInteger(options.time)) throw new TypeError('time must be an integer')
+  if (!Number.isInteger(options.time)) { throw new TypeError('time must be an integer') }
   if (options.time <= 0) throw new RangeError('time must be positive')
 
-  const target = await random(0, (10 ** options.digits) - 1)
+  const target = await random(0, 10 ** options.digits - 1)
   const buffer = Buffer.allocUnsafe(4)
   buffer.writeUInt32BE(target, 0)
 
@@ -81,7 +81,7 @@ async function totp (options) {
     data: buffer,
     entropy: Math.log2(10 ** options.digits),
     params: async ({ key }) => {
-      if (typeof options.secret === 'undefined') options.secret = crypto.randomBytes(Buffer.byteLength(key))
+      if (typeof options.secret === 'undefined') { options.secret = crypto.randomBytes(Buffer.byteLength(key)) }
 
       const time = options.time
       const offsets = Buffer.allocUnsafe(4 * options.window)
@@ -89,14 +89,16 @@ async function totp (options) {
       for (let i = 0; i < options.window; i++) {
         const counter = Math.floor(time / (options.step * 1000)) + i
 
-        const code = parseInt(speakeasy.totp({
-          secret: options.secret.toString('hex'),
-          encoding: 'hex',
-          step: options.step,
-          counter,
-          algorithm: options.hash,
-          digits: options.digits
-        }))
+        const code = parseInt(
+          speakeasy.totp({
+            secret: options.secret.toString('hex'),
+            encoding: 'hex',
+            step: options.step,
+            counter,
+            algorithm: options.hash,
+            digits: options.digits
+          })
+        )
 
         const offset = mod(target - code, 10 ** options.digits)
 
@@ -109,7 +111,10 @@ async function totp (options) {
         digits: options.digits,
         step: options.step,
         window: options.window,
-        pad: xor(options.secret, key.slice(0, Buffer.byteLength(options.secret))).toString('base64'),
+        pad: xor(
+          options.secret,
+          key.slice(0, Buffer.byteLength(options.secret))
+        ).toString('base64'),
         offsets: offsets.toString('base64')
       }
     },

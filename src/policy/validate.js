@@ -1,11 +1,11 @@
 /**
  * @file MFKDF Policy Validate
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Determine whether key can be derived from given factors
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 /**
@@ -28,7 +28,7 @@
  *
  * @param {Object} policy - Policy used to derive a key
  * @returns {Array.<string>} The ids of the provided factors
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @memberOf policy
  */
@@ -62,12 +62,12 @@ module.exports.ids = ids
  *
  * @param {Object} policy - Policy used to derive a key
  * @returns {boolean} Whether the policy is valid
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @memberOf policy
  */
 function validate (policy) {
   const list = ids(policy)
-  return ((new Set(list)).size === list.length)
+  return new Set(list).size === list.length
 }
 module.exports.validate = validate

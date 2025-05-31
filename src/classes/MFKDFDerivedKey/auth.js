@@ -1,11 +1,11 @@
 /**
  * @file Multi-Factor Derived Key Authentication Functions
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Authentication operations using a multi-factor derived key
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 const crypto = require('crypto')
@@ -31,7 +31,7 @@ const crypto = require('crypto')
  * @param {Buffer} challenge - The nonce value provided by the challenger
  * @param {Buffer} identity - The identity of the challenger
  * @returns {Buffer} The response value
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -40,7 +40,8 @@ async function ISO97982PassUnilateralAuthSymmetric (challenge, identity) {
   const plaintext = Buffer.concat([challenge, identity])
   return await this.encrypt(plaintext, 'aes256', 'CBC', true)
 }
-module.exports.ISO97982PassUnilateralAuthSymmetric = ISO97982PassUnilateralAuthSymmetric
+module.exports.ISO97982PassUnilateralAuthSymmetric =
+  ISO97982PassUnilateralAuthSymmetric
 
 /**
  * ISO 9798-2 Public Key 2-Pass Unilateral Authentication
@@ -63,7 +64,7 @@ module.exports.ISO97982PassUnilateralAuthSymmetric = ISO97982PassUnilateralAuthS
  * @param {Buffer} challenge - The nonce value provided by the challenger
  * @param {Buffer} identity - The identity of the challenger
  * @returns {Buffer} The response value
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -72,7 +73,8 @@ async function ISO97982PassUnilateralAuthAsymmetric (challenge, identity) {
   const plaintext = Buffer.concat([challenge, identity])
   return await this.sign(plaintext, 'rsa1024', true)
 }
-module.exports.ISO97982PassUnilateralAuthAsymmetric = ISO97982PassUnilateralAuthAsymmetric
+module.exports.ISO97982PassUnilateralAuthAsymmetric =
+  ISO97982PassUnilateralAuthAsymmetric
 
 /**
  * ISO 9798-2 2-Pass Unilateral Authentication over CCF
@@ -95,7 +97,7 @@ module.exports.ISO97982PassUnilateralAuthAsymmetric = ISO97982PassUnilateralAuth
  * @param {Buffer} challenge - The nonce value provided by the challenger
  * @param {Buffer} identity - The identity of the challenger
  * @returns {Buffer} The response value
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -124,7 +126,7 @@ module.exports.ISO97982PassUnilateralAuthCCF = ISO97982PassUnilateralAuthCCF
  *
  * @param {Buffer} identity - The identity of the challenger
  * @returns {Buffer} The response value
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -133,10 +135,14 @@ async function ISO97981PassUnilateralAuthSymmetric (identity) {
   const date = Math.floor(Date.now() / 1000)
   const challenge = Buffer.allocUnsafe(4)
   challenge.writeUInt32BE(date, 0)
-  const response = await this.ISO97982PassUnilateralAuthSymmetric(challenge, identity)
+  const response = await this.ISO97982PassUnilateralAuthSymmetric(
+    challenge,
+    identity
+  )
   return Buffer.concat([challenge, response])
 }
-module.exports.ISO97981PassUnilateralAuthSymmetric = ISO97981PassUnilateralAuthSymmetric
+module.exports.ISO97981PassUnilateralAuthSymmetric =
+  ISO97981PassUnilateralAuthSymmetric
 
 /**
  * ISO 9798-2 Public Key 1-Pass Unilateral Authentication
@@ -155,7 +161,7 @@ module.exports.ISO97981PassUnilateralAuthSymmetric = ISO97981PassUnilateralAuthS
  *
  * @param {Buffer} identity - The identity of the challenger
  * @returns {Buffer} The response value
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -164,10 +170,14 @@ async function ISO97981PassUnilateralAuthAsymmetric (identity) {
   const date = Math.floor(Date.now() / 1000)
   const challenge = Buffer.allocUnsafe(4)
   challenge.writeUInt32BE(date, 0)
-  const response = await this.ISO97982PassUnilateralAuthAsymmetric(challenge, identity)
+  const response = await this.ISO97982PassUnilateralAuthAsymmetric(
+    challenge,
+    identity
+  )
   return Buffer.concat([challenge, response])
 }
-module.exports.ISO97981PassUnilateralAuthAsymmetric = ISO97981PassUnilateralAuthAsymmetric
+module.exports.ISO97981PassUnilateralAuthAsymmetric =
+  ISO97981PassUnilateralAuthAsymmetric
 
 /**
  * ISO 9798-2 1-Pass Unilateral Authentication over CCF
@@ -186,7 +196,7 @@ module.exports.ISO97981PassUnilateralAuthAsymmetric = ISO97981PassUnilateralAuth
  *
  * @param {Buffer} identity - The identity of the challenger
  * @returns {Buffer} The response value
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -195,7 +205,10 @@ async function ISO97981PassUnilateralAuthCCF (identity) {
   const date = Math.floor(Date.now() / 1000)
   const challenge = Buffer.allocUnsafe(4)
   challenge.writeUInt32BE(date, 0)
-  const response = await this.ISO97982PassUnilateralAuthCCF(challenge, identity)
+  const response = await this.ISO97982PassUnilateralAuthCCF(
+    challenge,
+    identity
+  )
   return Buffer.concat([challenge, response])
 }
 module.exports.ISO97981PassUnilateralAuthCCF = ISO97981PassUnilateralAuthCCF
@@ -219,7 +232,7 @@ module.exports.ISO97981PassUnilateralAuthCCF = ISO97981PassUnilateralAuthCCF
  * const valid = await mfkdf.auth.VerifyISO97982PassUnilateralAuthSymmetric(challenge, identity, response, authKey) // -> true
  *
  * @returns {Buffer} Symmetric key
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -248,7 +261,7 @@ module.exports.ISO9798SymmetricKey = ISO9798SymmetricKey
  * const valid = await mfkdf.auth.VerifyISO97982PassUnilateralAuthAsymmetric(challenge, identity, response, authKey) // -> true
  *
  * @returns {Buffer} Public key (spki-der encoded)
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf MFKDFDerivedKey
  * @async
@@ -277,7 +290,7 @@ module.exports.ISO9798AsymmetricKey = ISO9798AsymmetricKey
  * const valid = await mfkdf.auth.VerifyISO97982PassUnilateralAuthCCF(challenge, identity, response, authKey) // -> true
  *
  * @returns {Buffer} CCF key
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf MFKDFDerivedKey
  * @async

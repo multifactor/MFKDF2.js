@@ -36,12 +36,17 @@ if (typeof window !== 'undefined') {
  * @param {Buffer} response - The response of the responder
  * @param {Buffer} key - The key used to authenticate
  * @returns {boolean} Whether the response is valid
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf auth
  * @async
  */
-async function VerifyISO97982PassUnilateralAuthSymmetric (challenge, identity, response, key) {
+async function VerifyISO97982PassUnilateralAuthSymmetric (
+  challenge,
+  identity,
+  response,
+  key
+) {
   const plaintext = Buffer.concat([challenge, identity])
 
   const iv = response.subarray(0, 16)
@@ -55,9 +60,10 @@ async function VerifyISO97982PassUnilateralAuthSymmetric (challenge, identity, r
     return false
   }
 
-  return (plaintext.toString('hex') === decrypted.toString('hex'))
+  return plaintext.toString('hex') === decrypted.toString('hex')
 }
-module.exports.VerifyISO97982PassUnilateralAuthSymmetric = VerifyISO97982PassUnilateralAuthSymmetric
+module.exports.VerifyISO97982PassUnilateralAuthSymmetric =
+  VerifyISO97982PassUnilateralAuthSymmetric
 
 /**
  * Verify ISO 9798-2 Public Key 2-Pass Unilateral Authentication
@@ -82,18 +88,35 @@ module.exports.VerifyISO97982PassUnilateralAuthSymmetric = VerifyISO97982PassUni
  * @param {Buffer} response - The response of the responder
  * @param {Buffer} key - The key used to authenticate
  * @returns {boolean} Whether the response is valid
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf auth
  * @async
  */
-async function VerifyISO97982PassUnilateralAuthAsymmetric (challenge, identity, response, key) {
+async function VerifyISO97982PassUnilateralAuthAsymmetric (
+  challenge,
+  identity,
+  response,
+  key
+) {
   const plaintext = Buffer.concat([challenge, identity])
 
-  const cryptoKey = await subtle.importKey('spki', key, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify'])
-  return await subtle.verify({ name: 'RSASSA-PKCS1-v1_5' }, cryptoKey, response, plaintext)
+  const cryptoKey = await subtle.importKey(
+    'spki',
+    key,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['verify']
+  )
+  return await subtle.verify(
+    { name: 'RSASSA-PKCS1-v1_5' },
+    cryptoKey,
+    response,
+    plaintext
+  )
 }
-module.exports.VerifyISO97982PassUnilateralAuthAsymmetric = VerifyISO97982PassUnilateralAuthAsymmetric
+module.exports.VerifyISO97982PassUnilateralAuthAsymmetric =
+  VerifyISO97982PassUnilateralAuthAsymmetric
 
 /**
  * Verify ISO 9798-2 2-Pass Unilateral Authentication over CCF
@@ -118,17 +141,23 @@ module.exports.VerifyISO97982PassUnilateralAuthAsymmetric = VerifyISO97982PassUn
  * @param {Buffer} response - The response of the responder
  * @param {Buffer} key - The key used to authenticate
  * @returns {boolean} Whether the response is valid
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf auth
  * @async
  */
-async function VerifyISO97982PassUnilateralAuthCCF (challenge, identity, response, key) {
+async function VerifyISO97982PassUnilateralAuthCCF (
+  challenge,
+  identity,
+  response,
+  key
+) {
   const ct = Buffer.concat([challenge, identity, key])
   const hash = crypto.createHash('sha256').update(ct).digest()
-  return (hash.toString('hex') === response.toString('hex'))
+  return hash.toString('hex') === response.toString('hex')
 }
-module.exports.VerifyISO97982PassUnilateralAuthCCF = VerifyISO97982PassUnilateralAuthCCF
+module.exports.VerifyISO97982PassUnilateralAuthCCF =
+  VerifyISO97982PassUnilateralAuthCCF
 
 /**
  * Verify ISO 9798-2 1-Pass Unilateral Authentication
@@ -150,12 +179,17 @@ module.exports.VerifyISO97982PassUnilateralAuthCCF = VerifyISO97982PassUnilatera
  * @param {Buffer} key - The key used to authenticate
  * @param {number} [window=5] - The maximum time difference in seconds
  * @returns {boolean} Whether the response is valid
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf auth
  * @async
  */
-async function VerifyISO97981PassUnilateralAuthSymmetric (identity, response, key, window = 5) {
+async function VerifyISO97981PassUnilateralAuthSymmetric (
+  identity,
+  response,
+  key,
+  window = 5
+) {
   const challenge = response.subarray(0, 4)
   const value = response.subarray(4)
 
@@ -163,9 +197,15 @@ async function VerifyISO97981PassUnilateralAuthSymmetric (identity, response, ke
   const observed = challenge.readUInt32BE(0)
   if (Math.abs(actual - observed) > window) return false
 
-  return await VerifyISO97982PassUnilateralAuthSymmetric(challenge, identity, value, key)
+  return await VerifyISO97982PassUnilateralAuthSymmetric(
+    challenge,
+    identity,
+    value,
+    key
+  )
 }
-module.exports.VerifyISO97981PassUnilateralAuthSymmetric = VerifyISO97981PassUnilateralAuthSymmetric
+module.exports.VerifyISO97981PassUnilateralAuthSymmetric =
+  VerifyISO97981PassUnilateralAuthSymmetric
 
 /**
  * Verify ISO 9798-2 Public Key 1-Pass Unilateral Authentication
@@ -187,12 +227,17 @@ module.exports.VerifyISO97981PassUnilateralAuthSymmetric = VerifyISO97981PassUni
  * @param {Buffer} key - The key used to authenticate
  * @param {number} [window=5] - The maximum time difference in seconds
  * @returns {boolean} Whether the response is valid
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf auth
  * @async
  */
-async function VerifyISO97981PassUnilateralAuthAsymmetric (identity, response, key, window = 5) {
+async function VerifyISO97981PassUnilateralAuthAsymmetric (
+  identity,
+  response,
+  key,
+  window = 5
+) {
   const challenge = response.subarray(0, 4)
   const value = response.subarray(4)
 
@@ -200,9 +245,15 @@ async function VerifyISO97981PassUnilateralAuthAsymmetric (identity, response, k
   const observed = challenge.readUInt32BE(0)
   if (Math.abs(actual - observed) > window) return false
 
-  return await VerifyISO97982PassUnilateralAuthAsymmetric(challenge, identity, value, key)
+  return await VerifyISO97982PassUnilateralAuthAsymmetric(
+    challenge,
+    identity,
+    value,
+    key
+  )
 }
-module.exports.VerifyISO97981PassUnilateralAuthAsymmetric = VerifyISO97981PassUnilateralAuthAsymmetric
+module.exports.VerifyISO97981PassUnilateralAuthAsymmetric =
+  VerifyISO97981PassUnilateralAuthAsymmetric
 
 /**
  * Verify ISO 9798-2 1-Pass Unilateral Authentication over CCF
@@ -224,12 +275,17 @@ module.exports.VerifyISO97981PassUnilateralAuthAsymmetric = VerifyISO97981PassUn
  * @param {Buffer} key - The key used to authenticate
  * @param {number} [window=5] - The maximum time difference in seconds
  * @returns {boolean} Whether the response is valid
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.17.0
  * @memberOf auth
  * @async
  */
-async function VerifyISO97981PassUnilateralAuthCCF (identity, response, key, window = 5) {
+async function VerifyISO97981PassUnilateralAuthCCF (
+  identity,
+  response,
+  key,
+  window = 5
+) {
   const challenge = response.subarray(0, 4)
   const value = response.subarray(4)
 
@@ -237,6 +293,12 @@ async function VerifyISO97981PassUnilateralAuthCCF (identity, response, key, win
   const observed = challenge.readUInt32BE(0)
   if (Math.abs(actual - observed) > window) return false
 
-  return await VerifyISO97982PassUnilateralAuthCCF(challenge, identity, value, key)
+  return await VerifyISO97982PassUnilateralAuthCCF(
+    challenge,
+    identity,
+    value,
+    key
+  )
 }
-module.exports.VerifyISO97981PassUnilateralAuthCCF = VerifyISO97981PassUnilateralAuthCCF
+module.exports.VerifyISO97981PassUnilateralAuthCCF =
+  VerifyISO97981PassUnilateralAuthCCF

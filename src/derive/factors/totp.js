@@ -1,11 +1,11 @@
 /**
  * @file MFKDF TOTP Factor Derivation
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Derive TOTP factor for multi-factor key derivation
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 const xor = require('buffer-xor')
 const speakeasy = require('speakeasy')
@@ -38,14 +38,14 @@ function mod (n, m) {
  * @param {Object} [options] - Additional options for deriving the TOTP factor
  * @param {number} [options.time] - Current time for TOTP; defaults to Date.now()
  * @returns {function(config:Object): Promise<MFKDFFactor>} Async function to generate MFKDF factor information
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.13.0
  * @memberof derive.factors
  */
 function totp (code, options = {}) {
   if (!Number.isInteger(code)) throw new TypeError('code must be an integer')
   if (typeof options.time === 'undefined') options.time = Date.now()
-  if (!Number.isInteger(options.time)) throw new TypeError('time must be an integer')
+  if (!Number.isInteger(options.time)) { throw new TypeError('time must be an integer') }
   if (options.time <= 0) throw new RangeError('time must be positive')
 
   return async (params) => {
@@ -78,14 +78,16 @@ function totp (code, options = {}) {
         for (let i = params.window - index; i < params.window; i++) {
           const counter = Math.floor(time / (params.step * 1000)) + i
 
-          const code = parseInt(speakeasy.totp({
-            secret: secret.toString('hex'),
-            encoding: 'hex',
-            step: params.step,
-            counter,
-            algorithm: params.hash,
-            digits: params.digits
-          }))
+          const code = parseInt(
+            speakeasy.totp({
+              secret: secret.toString('hex'),
+              encoding: 'hex',
+              step: params.step,
+              counter,
+              algorithm: params.hash,
+              digits: params.digits
+            })
+          )
 
           const offset = mod(target - code, 10 ** params.digits)
 
@@ -103,7 +105,7 @@ function totp (code, options = {}) {
         }
       },
       output: async () => {
-        return { }
+        return {}
       }
     }
   }

@@ -6,8 +6,9 @@ The following table describes the versions of this project that are currently su
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.x.x   | :x: |
-| 1.x.x   | :heavy_check_mark: |
+| 0.x.x   | :x:                |
+| 1.x.x   | :x:                |
+| 2.x.x   | :heavy_check_mark: |
 
 ## Reporting a Vulnerability
 

@@ -1,11 +1,11 @@
 /**
  * @file MFKDF HOTP Factor Setup
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Setup an HOTP factor for multi-factor key derivation
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 const defaults = require('../../defaults')
 const crypto = require('crypto')
@@ -42,7 +42,7 @@ function mod (n, m) {
  * @param {Buffer} [options.issuer='MFKDF'] - OTPAuth issuer string
  * @param {Buffer} [options.label='mfkdf.com'] - OTPAuth label string
  * @returns {MFKDFFactor} MFKDF factor information
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.12.0
  * @async
  * @memberof setup.factors
@@ -50,15 +50,15 @@ function mod (n, m) {
 async function hotp (options) {
   options = Object.assign(Object.assign({}, defaults.hotp), options)
 
-  if (typeof options.id !== 'string') throw new TypeError('id must be a string')
+  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
-  if (!Number.isInteger(options.digits)) throw new TypeError('digits must be an interger')
+  if (!Number.isInteger(options.digits)) { throw new TypeError('digits must be an interger') }
   if (options.digits < 6) throw new RangeError('digits must be at least 6')
   if (options.digits > 8) throw new RangeError('digits must be at most 8')
-  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) throw new RangeError('unrecognized hash function')
-  if (!Buffer.isBuffer(options.secret) && typeof options.secret !== 'undefined') throw new TypeError('secret must be a buffer')
+  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) { throw new RangeError('unrecognized hash function') }
+  if (!Buffer.isBuffer(options.secret) && typeof options.secret !== 'undefined') { throw new TypeError('secret must be a buffer') }
 
-  const target = await random(0, (10 ** options.digits) - 1)
+  const target = await random(0, 10 ** options.digits - 1)
   const buffer = Buffer.allocUnsafe(4)
   buffer.writeUInt32BE(target, 0)
 
@@ -68,22 +68,27 @@ async function hotp (options) {
     data: buffer,
     entropy: Math.log2(10 ** options.digits),
     params: async ({ key }) => {
-      if (typeof options.secret === 'undefined') options.secret = crypto.randomBytes(Buffer.byteLength(key))
+      if (typeof options.secret === 'undefined') { options.secret = crypto.randomBytes(Buffer.byteLength(key)) }
 
-      const code = parseInt(speakeasy.hotp({
-        secret: options.secret.toString('hex'),
-        encoding: 'hex',
-        counter: 1,
-        algorithm: options.hash,
-        digits: options.digits
-      }))
+      const code = parseInt(
+        speakeasy.hotp({
+          secret: options.secret.toString('hex'),
+          encoding: 'hex',
+          counter: 1,
+          algorithm: options.hash,
+          digits: options.digits
+        })
+      )
 
       const offset = mod(target - code, 10 ** options.digits)
 
       return {
         hash: options.hash,
         digits: options.digits,
-        pad: xor(options.secret, key.slice(0, Buffer.byteLength(options.secret))).toString('base64'),
+        pad: xor(
+          options.secret,
+          key.slice(0, Buffer.byteLength(options.secret))
+        ).toString('base64'),
         counter: 1,
         offset
       }

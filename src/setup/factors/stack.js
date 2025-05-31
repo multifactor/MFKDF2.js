@@ -1,11 +1,11 @@
 /**
  * @file MFKDF Stack Factor Setup
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Setup key stacking factor for multi-factor key derivation
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 const defaults = require('../../defaults')
 const setupKey = require('../key').key
@@ -49,7 +49,7 @@ const setupKey = require('../key').key
  * @param {number} [options.argon2mem=24576] -Mmemory to use if using argon2
  * @param {number} [options.argon2parallelism=1] - Parallelism to use if using argon2
  * @returns {MFKDFFactor} MFKDF factor information
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.15.0
  * @async
  * @memberof setup.factors
@@ -57,7 +57,7 @@ const setupKey = require('../key').key
 async function stack (factors, options) {
   options = Object.assign(Object.assign({}, defaults.stack), options)
 
-  if (typeof options.id !== 'string') throw new TypeError('id must be a string')
+  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
   const key = await setupKey(factors, options)

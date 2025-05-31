@@ -1,11 +1,11 @@
 /**
  * @file Multi-Factor Derived Key Persistence Functions
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Operations for persisting factors of a multi-factor derived key
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 /**
@@ -34,12 +34,12 @@
  *
  * @param {string} id - ID of the factor to persist
  * @returns {Buffer} - The share which can be used to bypass the factor
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.18.0
  * @memberOf MFKDFDerivedKey
  */
 function persistFactor (id) {
-  const index = this.policy.factors.findIndex(x => x.id === id)
+  const index = this.policy.factors.findIndex((x) => x.id === id)
   return this.shares[index]
 }
 module.exports.persistFactor = persistFactor

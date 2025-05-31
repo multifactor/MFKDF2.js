@@ -1,16 +1,16 @@
 /**
  * @file Multi-Factor Derived Key Class
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Class representing a multi-factor derived key
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 /**
  * Class representing a multi-factor derived key
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.8.0
  */
 class MFKDFDerivedKey {
@@ -56,12 +56,18 @@ MFKDFDerivedKey.prototype.reconstitute = reconstitution.reconstitute
 
 // Authentication Functions
 const auth = require('./auth')
-MFKDFDerivedKey.prototype.ISO97982PassUnilateralAuthSymmetric = auth.ISO97982PassUnilateralAuthSymmetric
-MFKDFDerivedKey.prototype.ISO97982PassUnilateralAuthAsymmetric = auth.ISO97982PassUnilateralAuthAsymmetric
-MFKDFDerivedKey.prototype.ISO97982PassUnilateralAuthCCF = auth.ISO97982PassUnilateralAuthCCF
-MFKDFDerivedKey.prototype.ISO97981PassUnilateralAuthSymmetric = auth.ISO97981PassUnilateralAuthSymmetric
-MFKDFDerivedKey.prototype.ISO97981PassUnilateralAuthAsymmetric = auth.ISO97981PassUnilateralAuthAsymmetric
-MFKDFDerivedKey.prototype.ISO97981PassUnilateralAuthCCF = auth.ISO97981PassUnilateralAuthCCF
+MFKDFDerivedKey.prototype.ISO97982PassUnilateralAuthSymmetric =
+  auth.ISO97982PassUnilateralAuthSymmetric
+MFKDFDerivedKey.prototype.ISO97982PassUnilateralAuthAsymmetric =
+  auth.ISO97982PassUnilateralAuthAsymmetric
+MFKDFDerivedKey.prototype.ISO97982PassUnilateralAuthCCF =
+  auth.ISO97982PassUnilateralAuthCCF
+MFKDFDerivedKey.prototype.ISO97981PassUnilateralAuthSymmetric =
+  auth.ISO97981PassUnilateralAuthSymmetric
+MFKDFDerivedKey.prototype.ISO97981PassUnilateralAuthAsymmetric =
+  auth.ISO97981PassUnilateralAuthAsymmetric
+MFKDFDerivedKey.prototype.ISO97981PassUnilateralAuthCCF =
+  auth.ISO97981PassUnilateralAuthCCF
 MFKDFDerivedKey.prototype.ISO9798SymmetricKey = auth.ISO9798SymmetricKey
 MFKDFDerivedKey.prototype.ISO9798AsymmetricKey = auth.ISO9798AsymmetricKey
 MFKDFDerivedKey.prototype.ISO9798CCFKey = auth.ISO9798CCFKey
@@ -73,7 +79,8 @@ MFKDFDerivedKey.prototype.persistFactor = persistence.persistFactor
 // Enveloping Functions
 const envelope = require('./envelope')
 MFKDFDerivedKey.prototype.addEnvelopedSecret = envelope.addEnvelopedSecret
-MFKDFDerivedKey.prototype.removeEnvelopedSecret = envelope.removeEnvelopedSecret
+MFKDFDerivedKey.prototype.removeEnvelopedSecret =
+  envelope.removeEnvelopedSecret
 MFKDFDerivedKey.prototype.addEnvelopedKey = envelope.addEnvelopedKey
 MFKDFDerivedKey.prototype.getEnvelopedSecret = envelope.getEnvelopedSecret
 MFKDFDerivedKey.prototype.getEnvelopedKey = envelope.getEnvelopedKey

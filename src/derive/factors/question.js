@@ -1,11 +1,11 @@
 /**
  * @file MFKDF Question Factor Derivation
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Derive question factor for multi-factor key derivation
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 const zxcvbn = require('zxcvbn')
 
@@ -28,15 +28,18 @@ const zxcvbn = require('zxcvbn')
  *
  * @param {string} answer - The answer from which to derive an MFKDF factor
  * @returns {function(config:Object): Promise<MFKDFFactor>} Async function to generate MFKDF factor information
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 1.0.0
  * @memberof derive.factors
  */
 function question (answer) {
-  if (typeof answer !== 'string') throw new TypeError('answer must be a string')
+  if (typeof answer !== 'string') { throw new TypeError('answer must be a string') }
   if (answer.length === 0) throw new RangeError('answer cannot be empty')
 
-  answer = answer.toLowerCase().replace(/[^0-9a-z ]/gi, '').trim()
+  answer = answer
+    .toLowerCase()
+    .replace(/[^0-9a-z ]/gi, '')
+    .trim()
   const strength = zxcvbn(answer)
 
   return async (params) => {

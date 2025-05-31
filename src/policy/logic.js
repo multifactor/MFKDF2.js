@@ -1,11 +1,11 @@
 /**
  * @file MFKDF Policy Logic
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Logical operators for MFKDF policy establishment
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 const stack = require('../setup/factors/stack').stack
@@ -38,7 +38,7 @@ const { v4: uuidv4 } = require('uuid')
  * @param {MFKDFFactor} factor1 - The first factor input to the OR policy
  * @param {MFKDFFactor} factor2 - The second factor input to the OR policy
  * @returns {MFKDFFactor} Factor that can be derived with either factor
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @async
  * @memberOf policy
@@ -75,7 +75,7 @@ module.exports.or = or
  * @param {MFKDFFactor} factor1 - The first factor input to the AND policy
  * @param {MFKDFFactor} factor2 - The second factor input to the AND policy
  * @returns {MFKDFFactor} Factor that can be derived with both factors
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @async
  * @memberOf policy
@@ -110,7 +110,7 @@ module.exports.and = and
  *
  * @param {Array.<MFKDFFactor>} factors - The factor inputs to the ALL policy
  * @returns {MFKDFFactor} Factor that can be derived with all factors
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @async
  * @memberOf policy
@@ -143,7 +143,7 @@ module.exports.all = all
  *
  * @param {Array.<MFKDFFactor>} factors - The factor inputs to the ANY policy
  * @returns {MFKDFFactor} Factor that can be derived with any factor
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @async
  * @memberOf policy
@@ -178,7 +178,7 @@ module.exports.any = any
  * @param {number} n - The number of factors to be required
  * @param {Array.<MFKDFFactor>} factors - The factor inputs to the atLeast(#) policy
  * @returns {MFKDFFactor} Factor that can be derived with at least n of the given factors
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.16.0
  * @async
  * @memberOf policy

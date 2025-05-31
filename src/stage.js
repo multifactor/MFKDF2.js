@@ -1,11 +1,11 @@
 /**
  * @file Stage
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Pre-compute MFKDF factors for benchmarking or performance
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 /**
@@ -15,7 +15,7 @@
  * @param {Promise<MFKDFFactor>} factor - An async MFKDF factor setup function promise
  * @param {Buffer} [key] - MFKDF output key, needed to pre-compute factor params
  * @returns {MFKDFFactor} An MFKDF factor whose outputs have been pre-computed
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 1.4.0
  * @async
  * @memberOf stage
@@ -42,7 +42,7 @@ async function setup (factor, key) {
  * @param {Object} params - Factor parameters
  * @param {Buffer} [key] - MFKDF output key, needed to pre-compute factor params
  * @returns {function(config:Object): Promise<MFKDFFactor>} An async MFKDF factor derivation function whose outputs have been pre-computed
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 1.4.0
  * @async
  * @memberOf stage

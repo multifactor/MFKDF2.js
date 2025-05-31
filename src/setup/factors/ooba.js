@@ -1,11 +1,11 @@
 /**
  * @file MFKDF OOBA Factor Setup
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Setup an Out-of-Band Authentication (OOBA) factor for multi-factor key derivation
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 const defaults = require('../../defaults')
 const crypto = require('crypto')
@@ -52,20 +52,20 @@ if (typeof window !== 'undefined') {
  * @param {CryptoKey} options.key - Public key of out-of-band channel
  * @param {Object} options.params - Parameters to provide out-of-band channel
  * @returns {MFKDFFactor} MFKDF factor information
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 1.1.0
  * @async
  * @memberof setup.factors
  */
 async function ooba (options) {
   options = Object.assign(Object.assign({}, defaults.ooba), options)
-  if (typeof options.id !== 'string') throw new TypeError('id must be a string')
+  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
-  if (!Number.isInteger(options.length)) throw new TypeError('length must be an interger')
+  if (!Number.isInteger(options.length)) { throw new TypeError('length must be an interger') }
   if (options.length <= 0) throw new RangeError('length must be positive')
   if (options.length > 32) throw new RangeError('length must be at most 32')
-  if (options.key.type !== 'public') throw new TypeError('key must be a public CryptoKey')
-  if (typeof options.params !== 'object') throw new TypeError('params must be an object')
+  if (options.key.type !== 'public') { throw new TypeError('key must be a public CryptoKey') }
+  if (typeof options.params !== 'object') { throw new TypeError('params must be an object') }
 
   const target = crypto.randomBytes(options.length)
 
@@ -84,7 +84,11 @@ async function ooba (options) {
       params.code = code
       const pad = xor(Buffer.from(code), target)
       const plaintext = Buffer.from(JSON.stringify(params))
-      const ciphertext = await subtle.encrypt({ name: 'RSA-OAEP' }, options.key, plaintext)
+      const ciphertext = await subtle.encrypt(
+        { name: 'RSA-OAEP' },
+        options.key,
+        plaintext
+      )
       const jwk = await subtle.exportKey('jwk', options.key)
       return {
         length: options.length,
@@ -95,7 +99,7 @@ async function ooba (options) {
       }
     },
     output: async () => {
-      return { }
+      return {}
     }
   }
 }

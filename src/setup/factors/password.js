@@ -1,11 +1,11 @@
 /**
  * @file MFKDF Password Factor Setup
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Setup password factor for multi-factor key derivation
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 const defaults = require('../../defaults')
 const zxcvbn = require('zxcvbn')
@@ -31,18 +31,18 @@ const zxcvbn = require('zxcvbn')
  * @param {Object} [options] - Configuration options
  * @param {string} [options.id='password'] - Unique identifier for this factor
  * @returns {MFKDFFactor} MFKDF factor information
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.8.0
  * @async
  * @memberof setup.factors
  */
 async function password (password, options) {
-  if (typeof password !== 'string') throw new TypeError('password must be a string')
+  if (typeof password !== 'string') { throw new TypeError('password must be a string') }
   if (password.length === 0) throw new RangeError('password cannot be empty')
 
   options = Object.assign(Object.assign({}, defaults.password), options)
 
-  if (typeof options.id !== 'string') throw new TypeError('id must be a string')
+  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
   const strength = zxcvbn(password)

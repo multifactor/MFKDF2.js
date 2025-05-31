@@ -1,11 +1,11 @@
 /**
  * @file Multi-factor Key Derivation
- * @copyright Multifactor 2022 All Rights Reserved
+ * @copyright Multifactor 2022–2025 All Rights Reserved
  *
  * @description
  * Derive a multi-factor derived key
  *
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  */
 
 const Ajv = require('ajv')
@@ -40,7 +40,7 @@ const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
  * @param {Object} policy - The key policy for the key being derived
  * @param {Object.<string, MFKDFFactor>} factors - Factors used to derive this key
  * @returns {MFKDFDerivedKey} A multi-factor derived key object
- * @author Vivek Nair (https://nair.me) <vivek@nair.me>
+ * @author Multifactor <support@multifactor.com>
  * @since 0.9.0
  * @async
  * @memberOf derive
@@ -49,7 +49,7 @@ async function key (policy, factors) {
   const ajv = new Ajv()
   const valid = ajv.validate(policySchema, policy)
   if (!valid) throw new TypeError('invalid key policy', ajv.errors)
-  if (Object.keys(factors).length < policy.threshold) throw new RangeError('insufficient factors provided to derive key')
+  if (Object.keys(factors).length < policy.threshold) { throw new RangeError('insufficient factors provided to derive key') }
 
   const shares = []
   const newFactors = []
@@ -63,11 +63,22 @@ async function key (policy, factors) {
       if (material.type === 'persisted') {
         share = material.data
       } else {
-        if (material.type !== factor.type) throw new TypeError('wrong factor material function used for this factor type')
+        if (material.type !== factor.type) {
+          throw new TypeError(
+            'wrong factor material function used for this factor type'
+          )
+        }
 
         const pad = Buffer.from(factor.pad, 'base64')
-        let stretched = Buffer.from(await hkdf('sha512', material.data, '', '', policy.size))
-        if (Buffer.byteLength(pad) > policy.size) stretched = Buffer.concat([Buffer.alloc(Buffer.byteLength(pad) - policy.size), stretched])
+        let stretched = Buffer.from(
+          await hkdf('sha512', material.data, '', '', policy.size)
+        )
+        if (Buffer.byteLength(pad) > policy.size) {
+          stretched = Buffer.concat([
+            Buffer.alloc(Buffer.byteLength(pad) - policy.size),
+            stretched
+          ])
+        }
 
         share = xor(pad, stretched)
       }
@@ -81,10 +92,15 @@ async function key (policy, factors) {
     }
   }
 
-  if (shares.filter(x => Buffer.isBuffer(x)).length < policy.threshold) throw new RangeError('insufficient factors provided to derive key')
+  if (shares.filter((x) => Buffer.isBuffer(x)).length < policy.threshold) { throw new RangeError('insufficient factors provided to derive key') }
 
   const secret = combine(shares, policy.threshold, policy.factors.length)
-  const key = await kdf(secret, Buffer.from(policy.salt, 'base64'), policy.size, policy.kdf)
+  const key = await kdf(
+    secret,
+    Buffer.from(policy.salt, 'base64'),
+    policy.size,
+    policy.kdf
+  )
 
   const newPolicy = JSON.parse(JSON.stringify(policy))
 
@@ -94,7 +110,11 @@ async function key (policy, factors) {
     }
   }
 
-  const originalShares = recover(shares, policy.threshold, policy.factors.length)
+  const originalShares = recover(
+    shares,
+    policy.threshold,
+    policy.factors.length
+  )
 
   return new MFKDFDerivedKey(newPolicy, key, secret, originalShares, outputs)
 }
