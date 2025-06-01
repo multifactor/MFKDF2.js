@@ -17,7 +17,7 @@ const zxcvbn = require('zxcvbn')
  * // setup key with password factor
  * const setup = await mfkdf.setup.key([
  *   await mfkdf.setup.factors.password('password')
- * ], {size: 8})
+ * ])
  *
  * // derive key with password factor
  * const derive = await mfkdf.derive.key(setup.policy, {

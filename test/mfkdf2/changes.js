@@ -35,7 +35,7 @@ suite('mfkdf2/changes', () => {
             id: 'password1'
           })
         ],
-        { kdf: 'hkdf', size: 16 }
+        { kdf: 'hkdf' }
       )
 
       const derive = await mfkdf.derive.key(setup.policy, {

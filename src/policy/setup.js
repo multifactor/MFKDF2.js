@@ -32,8 +32,8 @@ const validate = require('./validate').validate
  *   passwordC: mfkdf.derive.factors.password('passwordC'),
  * })
  *
- * setup.key.toString('hex') // -> e16a227944a65263
- * derive.key.toString('hex') // -> e16a227944a65263
+ * setup.key.toString('hex') // -> e1…63
+ * derive.key.toString('hex') // -> e1…63
  *
  * @param {MFKDFFactor} factor - Base factor used to derive this key
  * @param {Object} [options] - Configuration options

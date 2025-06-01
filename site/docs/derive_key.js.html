@@ -66,15 +66,15 @@
  * @author Multifactor &lt;support@multifactor.com>
  */
 
-const Ajv = require("ajv");
-const policySchema = require("./policy.json");
-const combine = require("../secrets/combine").combine;
-const recover = require("../secrets/recover").recover;
-const kdf = require("../kdf").kdf;
-const { hkdf } = require("@panva/hkdf");
-const xor = require("buffer-xor");
-const MFKDFDerivedKey = require("../classes/MFKDFDerivedKey");
-const kdfSetup = require("../setup/kdf").kdf;
+const Ajv = require('ajv')
+const policySchema = require('./policy.json')
+const combine = require('../secrets/combine').combine
+const recover = require('../secrets/recover').recover
+const kdf = require('../kdf').kdf
+const { hkdf } = require('@panva/hkdf')
+const xor = require('buffer-xor')
+const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
+const kdfSetup = require('../setup/kdf').kdf
 
 /**
  * Derive a key from multiple factors of input
@@ -107,82 +107,82 @@ const kdfSetup = require("../setup/kdf").kdf;
  * @async
  * @memberOf derive
  */
-async function key(policy, factors, options) {
-  const ajv = new Ajv();
-  const valid = ajv.validate(policySchema, policy);
-  if (!valid) throw new TypeError("invalid key policy: " + ajv.errorsText());
+async function key (policy, factors, options) {
+  const ajv = new Ajv()
+  const valid = ajv.validate(policySchema, policy)
+  if (!valid) throw new TypeError('invalid key policy: ' + ajv.errorsText())
   if (Object.keys(factors).length &lt; policy.threshold) {
-    throw new RangeError("insufficient factors provided to derive key");
+    throw new RangeError('insufficient factors provided to derive key')
   }
 
-  const shares = [];
-  const newFactors = [];
-  const outputs = {};
+  const shares = []
+  const newFactors = []
+  const outputs = {}
 
   for (const factor of policy.factors) {
-    if (factors[factor.id] &amp;&amp; typeof factors[factor.id] === "function") {
-      const material = await factors[factor.id](factor.params);
-      let share;
+    if (factors[factor.id] &amp;&amp; typeof factors[factor.id] === 'function') {
+      const material = await factors[factor.id](factor.params)
+      let share
 
-      if (material.type === "persisted") {
-        share = material.data;
+      if (material.type === 'persisted') {
+        share = material.data
       } else {
         if (material.type !== factor.type) {
           throw new TypeError(
-            "wrong factor material function used for this factor type"
-          );
+            'wrong factor material function used for this factor type'
+          )
         }
 
-        const pad = Buffer.from(factor.pad, "base64");
+        const pad = Buffer.from(factor.pad, 'base64')
         let stretched = Buffer.from(
-          await hkdf("sha512", material.data, "", "", 32)
-        );
+          await hkdf('sha512', material.data, '', '', 32)
+        )
         if (Buffer.byteLength(pad) > 32) {
           stretched = Buffer.concat([
             Buffer.alloc(Buffer.byteLength(pad) - 32),
-            stretched,
-          ]);
+            stretched
+          ])
         }
 
-        share = xor(pad, stretched);
+        share = xor(pad, stretched)
       }
 
-      shares.push(share);
-      if (material.output) outputs[factor.id] = await material.output();
-      newFactors.push(material.params);
+      shares.push(share)
+      if (material.output) outputs[factor.id] = await material.output()
+      newFactors.push(material.params)
     } else {
-      shares.push(null);
-      newFactors.push(null);
+      shares.push(null)
+      newFactors.push(null)
     }
   }
 
   if (shares.filter((x) => Buffer.isBuffer(x)).length &lt; policy.threshold) {
-    throw new RangeError("insufficient factors provided to derive key");
+    throw new RangeError('insufficient factors provided to derive key')
   }
 
   // kdf
   const kdfSettings = kdfSetup({
-    kdf: "argon2id",
+    kdf: 'argon2id',
     argon2time: Math.max(2, options &amp;&amp; options.time ? options.time : 2),
     argon2mem: Math.max(
       24576,
       options &amp;&amp; options.memory ? options.memory : 24576
-    ),
-  });
+    )
+  })
 
-  const secret = combine(shares, policy.threshold, policy.factors.length);
+  const secret = combine(shares, policy.threshold, policy.factors.length)
   const key = await kdf(
     secret,
-    Buffer.from(policy.salt, "base64"),
+    Buffer.from(policy.salt, 'base64'),
     32,
     kdfSettings
-  );
+  )
 
-  const newPolicy = JSON.parse(JSON.stringify(policy));
+  const newPolicy = JSON.parse(JSON.stringify(policy))
 
   for (const [index, factor] of newFactors.entries()) {
-    if (typeof factor === "function") {
-      newPolicy.factors[index].params = await factor({ key });
+    if (typeof factor === 'function') {
+      newPolicy.factors[index].params = await factor({ key })
     }
   }
 
@@ -190,11 +190,11 @@ async function key(policy, factors, options) {
     shares,
     policy.threshold,
     policy.factors.length
-  );
+  )
 
-  return new MFKDFDerivedKey(newPolicy, key, secret, originalShares, outputs);
+  return new MFKDFDerivedKey(newPolicy, key, secret, originalShares, outputs)
 }
-module.exports.key = key;
+module.exports.key = key
 </code></pre>
         </article>
     </section>
@@ -209,7 +209,7 @@ module.exports.key = key;
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Sat May 31 2025 19:55:39 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Sat May 31 2025 21:49:31 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

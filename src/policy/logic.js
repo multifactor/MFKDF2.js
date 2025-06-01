@@ -32,8 +32,8 @@ const { v4: uuidv4 } = require('uuid')
  *   passwordC: mfkdf.derive.factors.password('passwordC'),
  * })
  *
- * setup.key.toString('hex') // -> e16a227944a65263
- * derive.key.toString('hex') // -> e16a227944a65263
+ * setup.key.toString('hex') // -> e1…63
+ * derive.key.toString('hex') // -> e1…63
  *
  * @param {MFKDFFactor} factor1 - The first factor input to the OR policy
  * @param {MFKDFFactor} factor2 - The second factor input to the OR policy
@@ -69,8 +69,8 @@ module.exports.or = or
  *   passwordC: mfkdf.derive.factors.password('passwordC'),
  * })
  *
- * setup.key.toString('hex') // -> e16a227944a65263
- * derive.key.toString('hex') // -> e16a227944a65263
+ * setup.key.toString('hex') // -> e1…63
+ * derive.key.toString('hex') // -> e1…63
  *
  * @param {MFKDFFactor} factor1 - The first factor input to the AND policy
  * @param {MFKDFFactor} factor2 - The second factor input to the AND policy
@@ -105,8 +105,8 @@ module.exports.and = and
  *   passwordC: mfkdf.derive.factors.password('passwordC'),
  * })
  *
- * setup.key.toString('hex') // -> e16a227944a65263
- * derive.key.toString('hex') // -> e16a227944a65263
+ * setup.key.toString('hex') // -> e1…63
+ * derive.key.toString('hex') // -> e1…63
  *
  * @param {Array.<MFKDFFactor>} factors - The factor inputs to the ALL policy
  * @returns {MFKDFFactor} Factor that can be derived with all factors
@@ -138,8 +138,8 @@ module.exports.all = all
  *   passwordB: mfkdf.derive.factors.password('passwordB')
  * })
  *
- * setup.key.toString('hex') // -> e16a227944a65263
- * derive.key.toString('hex') // -> e16a227944a65263
+ * setup.key.toString('hex') // -> e1…63
+ * derive.key.toString('hex') // -> e1…63
  *
  * @param {Array.<MFKDFFactor>} factors - The factor inputs to the ANY policy
  * @returns {MFKDFFactor} Factor that can be derived with any factor
@@ -172,8 +172,8 @@ module.exports.any = any
  *   passwordB: mfkdf.derive.factors.password('passwordB')
  * })
  *
- * setup.key.toString('hex') // -> e16a227944a65263
- * derive.key.toString('hex') // -> e16a227944a65263
+ * setup.key.toString('hex') // -> e1…63
+ * derive.key.toString('hex') // -> e1…63
  *
  * @param {number} n - The number of factors to be required
  * @param {Array.<MFKDFFactor>} factors - The factor inputs to the atLeast(#) policy

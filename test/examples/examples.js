@@ -208,7 +208,7 @@ suite('examples', () => {
 
     // derive key
     const key = await mfkdf.kdf('password', 'salt', 8, config)
-    key.toString('hex') // -> 0394a2ede332c9a1
+    key.toString('hex') // -> 03…a1
 
     config.should.deep.equal({
       type: 'pbkdf2',
@@ -228,7 +228,7 @@ suite('examples', () => {
           uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
         })
       ],
-      { threshold: 2, size: 16, kdf: 'pbkdf2', pbkdf2rounds: 1 }
+      { threshold: 2, kdf: 'pbkdf2', pbkdf2rounds: 1 }
     )
 
     // derive key using 2 of the 3 factors
@@ -254,7 +254,7 @@ suite('examples', () => {
           uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
         })
       ],
-      { threshold: 2, size: 16 }
+      { threshold: 2 }
     )
 
     // derive key using 2 of the 3 factors
@@ -378,8 +378,8 @@ suite('examples', () => {
         passwordC: mfkdf.derive.factors.password('passwordC')
       })
 
-      setup.key.toString('hex') // -> e16a227944a65263
-      derive.key.toString('hex') // -> e16a227944a65263
+      setup.key.toString('hex') // -> e1…63
+      derive.key.toString('hex') // -> e1…63
 
       setup.key.toString('hex').should.equal(derive.key.toString('hex'))
     })
@@ -401,8 +401,8 @@ suite('examples', () => {
         passwordC: mfkdf.derive.factors.password('passwordC')
       })
 
-      setup.key.toString('hex') // -> e16a227944a65263
-      derive.key.toString('hex') // -> e16a227944a65263
+      setup.key.toString('hex') // -> e1…63
+      derive.key.toString('hex') // -> e1…63
 
       setup.key.toString('hex').should.equal(derive.key.toString('hex'))
     })
@@ -422,8 +422,8 @@ suite('examples', () => {
         passwordB: mfkdf.derive.factors.password('passwordB')
       })
 
-      setup.key.toString('hex') // -> e16a227944a65263
-      derive.key.toString('hex') // -> e16a227944a65263
+      setup.key.toString('hex') // -> e1…63
+      derive.key.toString('hex') // -> e1…63
 
       setup.key.toString('hex').should.equal(derive.key.toString('hex'))
     })
@@ -444,8 +444,8 @@ suite('examples', () => {
         passwordB: mfkdf.derive.factors.password('passwordB')
       })
 
-      setup.key.toString('hex') // -> e16a227944a65263
-      derive.key.toString('hex') // -> e16a227944a65263
+      setup.key.toString('hex') // -> e1…63
+      derive.key.toString('hex') // -> e1…63
 
       setup.key.toString('hex').should.equal(derive.key.toString('hex'))
     })
