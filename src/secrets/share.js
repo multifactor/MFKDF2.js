@@ -9,7 +9,8 @@
  */
 const crypto = require('crypto')
 const xor = require('buffer-xor')
-const secrets = require('secrets.js-34r7h')
+// const secrets = require("secrets.js-34r7h");
+const sss = require('./library')
 
 /**
  * K-of-N secret sharing. Uses bitwise XOR for k=n, Shamir's Secret Sharing for 1 < K < N, and direct secret sharing for K = 1.
@@ -58,15 +59,23 @@ function share (secret, k, n) {
     return shares
   } else {
     // k-of-n
-    secrets.init(Math.max(Math.ceil(Math.log(n + 1) / Math.LN2), 3))
-    const shares = secrets.share(secret.toString('hex'), n, k, 0)
+    const shares = sss.split(new Uint8Array(secret), n, k)
+    return shares.map((share) => Buffer.from(share))
+
+    // Old implementation using secrets.js
+    /*
+    secrets.init(Math.max(Math.ceil(Math.log(n + 1) / Math.LN2), 3));
+    const shares = secrets.share(secret.toString("hex"), n, k, 0);
     return shares.map((share) => {
-      const components = secrets.extractShareComponents(share)
+      const components = secrets.extractShareComponents(share);
 
-      if (components.data.length % 2 === 1) { components.data = '0' + components.data }
+      if (components.data.length % 2 === 1) {
+        components.data = "0" + components.data;
+      }
 
-      return Buffer.from(components.data, 'hex')
-    })
+      return Buffer.from(components.data, "hex");
+    });
+    */
   }
 }
 module.exports.share = share

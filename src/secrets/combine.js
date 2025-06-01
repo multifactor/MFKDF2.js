@@ -8,7 +8,9 @@
  * @author Multifactor <support@multifactor.com>
  */
 const xor = require('buffer-xor')
-const secrets = require('secrets.js-34r7h')
+// const secrets = require("secrets.js-34r7h");
+// const sss = require("shamir-secret-sharing");
+const sss = require('./library')
 
 /**
  * K-of-N secret combining. Uses bitwise XOR for k=n, Shamir's Secret Sharing for 1 < K < N, and direct secret sharing for K = 1.
@@ -40,7 +42,9 @@ function combine (shares, k, n) {
   if (!Number.isInteger(k)) throw new TypeError('k must be an integer')
   if (!(k > 0)) throw new RangeError('k must be positive')
   if (k > n) throw new RangeError('k must be less than or equal to n')
-  if (shares.length < k) { throw new RangeError('not enough shares provided to retrieve secret') }
+  if (shares.length < k) {
+    throw new RangeError('not enough shares provided to retrieve secret')
+  }
 
   if (k === 1) {
     // 1-of-n
@@ -60,24 +64,17 @@ function combine (shares, k, n) {
       )
     }
 
-    const bits = Math.max(Math.ceil(Math.log(n + 1) / Math.LN2), 3)
-    secrets.init(bits)
-
     const formatted = []
 
     for (const [index, share] of shares.entries()) {
       if (share) {
-        let value = Number(bits).toString(36) // bits
-        const maxIdLength = (Math.pow(2, bits) - 1).toString(16).length
-        value += (index + 1).toString(16).padStart(maxIdLength, '0') // id
-        value += share.toString('hex')
-        formatted.push(value)
+        const id = new Uint8Array([index + 1])
+        const value = Buffer.concat([share, id])
+        formatted.push(new Uint8Array(value))
       }
     }
 
-    if (formatted.length < k) { throw new RangeError('not enough shares provided to retrieve secret') }
-
-    return Buffer.from(secrets.combine(formatted), 'hex')
+    return Buffer.from(sss.combine(formatted))
   }
 }
 module.exports.combine = combine

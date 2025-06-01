@@ -76,15 +76,16 @@ async function key (policy, factors, options) {
         }
 
         const pad = Buffer.from(factor.pad, 'base64')
-        let stretched = Buffer.from(
+        const stretched = Buffer.from(
           await hkdf('sha256', material.data, factor.salt, '', 32)
         )
-        if (Buffer.byteLength(pad) > 32) {
-          stretched = Buffer.concat([
-            Buffer.alloc(Buffer.byteLength(pad) - 32),
-            stretched
-          ])
-        }
+        // No longer needed in MFKDF2
+        // if (Buffer.byteLength(pad) > 32) {
+        //   stretched = Buffer.concat([
+        //     Buffer.alloc(Buffer.byteLength(pad) - 32),
+        //     stretched
+        //   ])
+        // }
 
         share = xor(pad, stretched)
       }

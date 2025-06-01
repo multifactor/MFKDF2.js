@@ -162,15 +162,16 @@ async function key (factors, options) {
     realEntropy.push(factor.entropy)
 
     const salt = crypto.randomBytes(32).toString('base64')
-    let stretched = Buffer.from(
+    const stretched = Buffer.from(
       await hkdf('sha256', factor.data, salt, '', 32)
     )
-    if (Buffer.byteLength(share) > 32) {
-      stretched = Buffer.concat([
-        Buffer.alloc(Buffer.byteLength(share) - 32),
-        stretched
-      ])
-    }
+    // No longer needed in MFKDF2
+    // if (Buffer.byteLength(share) > 32) {
+    //   stretched = Buffer.concat([
+    //     Buffer.alloc(Buffer.byteLength(share) - 32),
+    //     stretched
+    //   ])
+    // }
 
     const pad = xor(share, stretched)
     const params = await factor.params({ key })

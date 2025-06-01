@@ -322,12 +322,13 @@ async function reconstitute (
     factors[factor.id] = factor
     const pad = Buffer.from(factor.pad, 'base64')
     const share = this.shares[index]
-    let factorMaterial = xor(pad, share)
-    if (Buffer.byteLength(factorMaterial) > 32) {
-      factorMaterial = factorMaterial.subarray(
-        Buffer.byteLength(factorMaterial) - 32
-      )
-    }
+    const factorMaterial = xor(pad, share)
+    // No longer needed in MFKDF2
+    // if (Buffer.byteLength(factorMaterial) > 32) {
+    //   factorMaterial = factorMaterial.subarray(
+    //     Buffer.byteLength(factorMaterial) - 32
+    //   )
+    // }
     material[factor.id] = factorMaterial
   }
 
@@ -408,16 +409,17 @@ async function reconstitute (
   for (const [index, factor] of Object.values(factors).entries()) {
     const share = shares[index]
     const salt = crypto.randomBytes(32).toString('base64')
-    let stretched = Buffer.isBuffer(material[factor.id])
+    const stretched = Buffer.isBuffer(material[factor.id])
       ? material[factor.id]
       : Buffer.from(await hkdf('sha256', data[factor.id], salt, '', 32))
 
-    if (Buffer.byteLength(share) > 32) {
-      stretched = Buffer.concat([
-        Buffer.alloc(Buffer.byteLength(share) - 32),
-        stretched
-      ])
-    }
+    // No longer needed in MFKDF2
+    // if (Buffer.byteLength(share) > 32) {
+    //   stretched = Buffer.concat([
+    //     Buffer.alloc(Buffer.byteLength(share) - 32),
+    //     stretched,
+    //   ]);
+    // }
 
     factor.pad = xor(share, stretched).toString('base64')
     factor.salt = factor.salt ? factor.salt : salt

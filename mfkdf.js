@@ -88183,1066 +88183,6 @@ module.exports = safer
 
 /***/ }),
 
-/***/ 1134:
-/***/ (function(module, exports) {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;// @preserve author Alexander Stetsyuk
-// @preserve author Glenn Rempe <glenn@rempe.us>
-// @license MIT
-
-/*jslint passfail: false, bitwise: true, nomen: true, plusplus: true, todo: false, maxerr: 1000 */
-/*global define, require, module, exports, window, Uint32Array */
-
-// eslint : http://eslint.org/docs/configuring/
-/*eslint-env node, browser, jasmine */
-/*eslint no-underscore-dangle:0 */
-
-// UMD (Universal Module Definition)
-// Uses Node, AMD or browser globals to create a module. This module creates
-// a global even when AMD is used. This is useful if you have some scripts
-// that are loaded by an AMD loader, but they still want access to globals.
-// See : https://github.com/umdjs/umd
-// See : https://github.com/umdjs/umd/blob/master/returnExportsGlobal.js
-//
-;(function(root, factory) {
-    "use strict"
-
-    if (true) {
-        // AMD. Register as an anonymous module.
-        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = (function() {
-            /*eslint-disable no-return-assign */
-            return (root.secrets = factory(window.crypto))
-            /*eslint-enable no-return-assign */
-        }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__))
-    } else {}
-})(this, function(crypto) {
-    "use strict"
-
-    var defaults, config, preGenPadding, runCSPRNGTest, CSPRNGTypes
-
-    function reset() {
-        defaults = {
-            bits: 8, // default number of bits
-            radix: 16, // work with HEX by default
-            minBits: 3,
-            maxBits: 20, // this permits 1,048,575 shares, though going this high is NOT recommended in JS!
-            bytesPerChar: 2,
-            maxBytesPerChar: 6, // Math.pow(256,7) > Math.pow(2,53)
-
-            // Primitive polynomials (in decimal form) for Galois Fields GF(2^n), for 2 <= n <= 30
-            // The index of each term in the array corresponds to the n for that polynomial
-            // i.e. to get the polynomial for n=16, use primitivePolynomials[16]
-            primitivePolynomials: [
-                null,
-                null,
-                1,
-                3,
-                3,
-                5,
-                3,
-                3,
-                29,
-                17,
-                9,
-                5,
-                83,
-                27,
-                43,
-                3,
-                45,
-                9,
-                39,
-                39,
-                9,
-                5,
-                3,
-                33,
-                27,
-                9,
-                71,
-                39,
-                9,
-                5,
-                83
-            ]
-        }
-        config = {}
-        preGenPadding = new Array(1024).join("0") // Pre-generate a string of 1024 0's for use by padLeft().
-        runCSPRNGTest = true
-
-        // WARNING : Never use 'testRandom' except for testing.
-        CSPRNGTypes = [
-            "nodeCryptoRandomBytes",
-            "browserCryptoGetRandomValues",
-            "testRandom"
-        ]
-    }
-
-    function isSetRNG() {
-        if (config && config.rng && typeof config.rng === "function") {
-            return true
-        }
-
-        return false
-    }
-
-    // Pads a string `str` with zeros on the left so that its length is a multiple of `bits`
-    function padLeft(str, multipleOfBits) {
-        var missing
-
-        if (multipleOfBits === 0 || multipleOfBits === 1) {
-            return str
-        }
-
-        if (multipleOfBits && multipleOfBits > 1024) {
-            throw new Error(
-                "Padding must be multiples of no larger than 1024 bits."
-            )
-        }
-
-        multipleOfBits = multipleOfBits || config.bits
-
-        if (str) {
-            missing = str.length % multipleOfBits
-        }
-
-        if (missing) {
-            return (preGenPadding + str).slice(
-                -(multipleOfBits - missing + str.length)
-            )
-        }
-
-        return str
-    }
-
-    function hex2bin(str) {
-        var bin = "",
-            num,
-            i
-
-        for (i = str.length - 1; i >= 0; i--) {
-            num = parseInt(str[i], 16)
-
-            if (isNaN(num)) {
-                throw new Error("Invalid hex character.")
-            }
-
-            bin = padLeft(num.toString(2), 4) + bin
-        }
-        return bin
-    }
-
-    function bin2hex(str) {
-        var hex = "",
-            num,
-            i
-
-        str = padLeft(str, 4)
-
-        for (i = str.length; i >= 4; i -= 4) {
-            num = parseInt(str.slice(i - 4, i), 2)
-            if (isNaN(num)) {
-                throw new Error("Invalid binary character.")
-            }
-            hex = num.toString(16) + hex
-        }
-
-        return hex
-    }
-
-    // Browser supports crypto.getRandomValues()
-    function hasCryptoGetRandomValues() {
-        if (
-            crypto &&
-            typeof crypto === "object" &&
-            (typeof crypto.getRandomValues === "function" ||
-                typeof crypto.getRandomValues === "object") &&
-            (typeof Uint32Array === "function" ||
-                typeof Uint32Array === "object")
-        ) {
-            return true
-        }
-
-        return false
-    }
-
-    // Node.js support for crypto.randomBytes()
-    function hasCryptoRandomBytes() {
-        if (
-            typeof crypto === "object" &&
-            typeof crypto.randomBytes === "function"
-        ) {
-            return true
-        }
-
-        return false
-    }
-
-    // Returns a pseudo-random number generator of the form function(bits){}
-    // which should output a random string of 1's and 0's of length `bits`.
-    // `type` (Optional) : A string representing the CSPRNG that you want to
-    // force to be loaded, overriding feature detection. Can be one of:
-    //    "nodeCryptoRandomBytes"
-    //    "browserCryptoGetRandomValues"
-    //
-    function getRNG(type) {
-        function construct(bits, arr, radix, size) {
-            var i = 0,
-                len,
-                str = "",
-                parsedInt
-
-            if (arr) {
-                len = arr.length - 1
-            }
-
-            while (i < len || str.length < bits) {
-                // convert any negative nums to positive with Math.abs()
-                parsedInt = Math.abs(parseInt(arr[i], radix))
-                str = str + padLeft(parsedInt.toString(2), size)
-                i++
-            }
-
-            str = str.substr(-bits)
-
-            // return null so this result can be re-processed if the result is all 0's.
-            if ((str.match(/0/g) || []).length === str.length) {
-                return null
-            }
-
-            return str
-        }
-
-        // Node.js : crypto.randomBytes()
-        // Note : Node.js and crypto.randomBytes() uses the OpenSSL RAND_bytes() function for its CSPRNG.
-        //        Node.js will need to have been compiled with OpenSSL for this to work.
-        // See : https://github.com/joyent/node/blob/d8baf8a2a4481940bfed0196308ae6189ca18eee/src/node_crypto.cc#L4696
-        // See : https://www.openssl.org/docs/crypto/rand.html
-        function nodeCryptoRandomBytes(bits) {
-            var buf,
-                bytes,
-                radix,
-                size,
-                str = null
-
-            radix = 16
-            size = 4
-            bytes = Math.ceil(bits / 8)
-
-            while (str === null) {
-                buf = crypto.randomBytes(bytes)
-                str = construct(bits, buf.toString("hex"), radix, size)
-            }
-
-            return str
-        }
-
-        // Browser : crypto.getRandomValues()
-        // See : https://dvcs.w3.org/hg/webcrypto-api/raw-file/tip/spec/Overview.html#dfn-Crypto
-        // See : https://developer.mozilla.org/en-US/docs/Web/API/RandomSource/getRandomValues
-        // Supported Browsers : http://caniuse.com/#search=crypto.getRandomValues
-        function browserCryptoGetRandomValues(bits) {
-            var elems,
-                radix,
-                size,
-                str = null
-
-            radix = 10
-            size = 32
-            elems = Math.ceil(bits / 32)
-            while (str === null) {
-                str = construct(
-                    bits,
-                    crypto.getRandomValues(new Uint32Array(elems)),
-                    radix,
-                    size
-                )
-            }
-
-            return str
-        }
-
-        // /////////////////////////////////////////////////////////////
-        // WARNING : DO NOT USE. For testing purposes only.
-        // /////////////////////////////////////////////////////////////
-        // This function will return repeatable non-random test bits. Can be used
-        // for testing only. Node.js does not return proper random bytes
-        // when run within a PhantomJS container.
-        function testRandom(bits) {
-            var arr,
-                elems,
-                int,
-                radix,
-                size,
-                str = null
-
-            radix = 10
-            size = 32
-            elems = Math.ceil(bits / 32)
-            int = 123456789
-            arr = new Uint32Array(elems)
-
-            // Fill every element of the Uint32Array with the same int.
-            for (var i = 0; i < arr.length; i++) {
-                arr[i] = int
-            }
-
-            while (str === null) {
-                str = construct(bits, arr, radix, size)
-            }
-
-            return str
-        }
-
-        // Return a random generator function for browsers that support
-        // crypto.getRandomValues() or Node.js compiled with OpenSSL support.
-        // WARNING : NEVER use testRandom outside of a testing context. Totally non-random!
-        if (type && type === "testRandom") {
-            config.typeCSPRNG = type
-            return testRandom
-        } else if (type && type === "nodeCryptoRandomBytes") {
-            config.typeCSPRNG = type
-            return nodeCryptoRandomBytes
-        } else if (type && type === "browserCryptoGetRandomValues") {
-            config.typeCSPRNG = type
-            return browserCryptoGetRandomValues
-        } else if (hasCryptoRandomBytes()) {
-            config.typeCSPRNG = "nodeCryptoRandomBytes"
-            return nodeCryptoRandomBytes
-        } else if (hasCryptoGetRandomValues()) {
-            config.typeCSPRNG = "browserCryptoGetRandomValues"
-            return browserCryptoGetRandomValues
-        }
-    }
-
-    // Splits a number string `bits`-length segments, after first
-    // optionally zero-padding it to a length that is a multiple of `padLength.
-    // Returns array of integers (each less than 2^bits-1), with each element
-    // representing a `bits`-length segment of the input string from right to left,
-    // i.e. parts[0] represents the right-most `bits`-length segment of the input string.
-    function splitNumStringToIntArray(str, padLength) {
-        var parts = [],
-            i
-
-        if (padLength) {
-            str = padLeft(str, padLength)
-        }
-
-        for (i = str.length; i > config.bits; i -= config.bits) {
-            parts.push(parseInt(str.slice(i - config.bits, i), 2))
-        }
-
-        parts.push(parseInt(str.slice(0, i), 2))
-
-        return parts
-    }
-
-    // Polynomial evaluation at `x` using Horner's Method
-    // NOTE: fx=fx * x + coeff[i] ->  exp(log(fx) + log(x)) + coeff[i],
-    //       so if fx===0, just set fx to coeff[i] because
-    //       using the exp/log form will result in incorrect value
-    function horner(x, coeffs) {
-        var logx = config.logs[x],
-            fx = 0,
-            i
-
-        for (i = coeffs.length - 1; i >= 0; i--) {
-            if (fx !== 0) {
-                fx =
-                    config.exps[(logx + config.logs[fx]) % config.maxShares] ^
-                    coeffs[i]
-            } else {
-                fx = coeffs[i]
-            }
-        }
-
-        return fx
-    }
-
-    // Evaluate the Lagrange interpolation polynomial at x = `at`
-    // using x and y Arrays that are of the same length, with
-    // corresponding elements constituting points on the polynomial.
-    function lagrange(at, x, y) {
-        var sum = 0,
-            len,
-            product,
-            i,
-            j
-
-        for (i = 0, len = x.length; i < len; i++) {
-            if (y[i]) {
-                product = config.logs[y[i]]
-
-                for (j = 0; j < len; j++) {
-                    if (i !== j) {
-                        if (at === x[j]) {
-                            // happens when computing a share that is in the list of shares used to compute it
-                            product = -1 // fix for a zero product term, after which the sum should be sum^0 = sum, not sum^1
-                            break
-                        }
-                        product =
-                            (product +
-                                config.logs[at ^ x[j]] -
-                                config.logs[x[i] ^ x[j]] +
-                                config.maxShares) %
-                            config.maxShares // to make sure it's not negative
-                    }
-                }
-
-                // though exps[-1] === undefined and undefined ^ anything = anything in
-                // chrome, this behavior may not hold everywhere, so do the check
-                sum = product === -1 ? sum : sum ^ config.exps[product]
-            }
-        }
-
-        return sum
-    }
-
-    // This is the basic polynomial generation and evaluation function
-    // for a `config.bits`-length secret (NOT an arbitrary length)
-    // Note: no error-checking at this stage! If `secret` is NOT
-    // a NUMBER less than 2^bits-1, the output will be incorrect!
-    function getShares(secret, numShares, threshold) {
-        var shares = [],
-            coeffs = [secret],
-            i,
-            len
-
-        for (i = 1; i < threshold; i++) {
-            coeffs[i] = parseInt(config.rng(config.bits), 2)
-        }
-
-        for (i = 1, len = numShares + 1; i < len; i++) {
-            shares[i - 1] = {
-                x: i,
-                y: horner(i, coeffs)
-            }
-        }
-
-        return shares
-    }
-
-    function constructPublicShareString(bits, id, data) {
-        var bitsBase36, idHex, idMax, idPaddingLen, newShareString
-
-        id = parseInt(id, config.radix)
-        bits = parseInt(bits, 10) || config.bits
-        bitsBase36 = bits.toString(36).toUpperCase()
-        idMax = Math.pow(2, bits) - 1
-        idPaddingLen = idMax.toString(config.radix).length
-        idHex = padLeft(id.toString(config.radix), idPaddingLen)
-
-        if (typeof id !== "number" || id % 1 !== 0 || id < 1 || id > idMax) {
-            throw new Error(
-                "Share id must be an integer between 1 and " +
-                    idMax +
-                    ", inclusive."
-            )
-        }
-
-        newShareString = bitsBase36 + idHex + data
-
-        return newShareString
-    }
-
-    // EXPORTED FUNCTIONS
-    // //////////////////
-
-    var secrets = {
-        init: function(bits, rngType) {
-            var logs = [],
-                exps = [],
-                x = 1,
-                primitive,
-                i
-
-            // reset all config back to initial state
-            reset()
-
-            if (
-                bits &&
-                (typeof bits !== "number" ||
-                    bits % 1 !== 0 ||
-                    bits < defaults.minBits ||
-                    bits > defaults.maxBits)
-            ) {
-                throw new Error(
-                    "Number of bits must be an integer between " +
-                        defaults.minBits +
-                        " and " +
-                        defaults.maxBits +
-                        ", inclusive."
-                )
-            }
-
-            if (rngType && CSPRNGTypes.indexOf(rngType) === -1) {
-                throw new Error("Invalid RNG type argument : '" + rngType + "'")
-            }
-
-            config.radix = defaults.radix
-            config.bits = bits || defaults.bits
-            config.size = Math.pow(2, config.bits)
-            config.maxShares = config.size - 1
-
-            // Construct the exp and log tables for multiplication.
-            primitive = defaults.primitivePolynomials[config.bits]
-
-            for (i = 0; i < config.size; i++) {
-                exps[i] = x
-                logs[x] = i
-                x = x << 1 // Left shift assignment
-                if (x >= config.size) {
-                    x = x ^ primitive // Bitwise XOR assignment
-                    x = x & config.maxShares // Bitwise AND assignment
-                }
-            }
-
-            config.logs = logs
-            config.exps = exps
-
-            if (rngType) {
-                this.setRNG(rngType)
-            }
-
-            if (!isSetRNG()) {
-                this.setRNG()
-            }
-
-            if (
-                !isSetRNG() ||
-                !config.bits ||
-                !config.size ||
-                !config.maxShares ||
-                !config.logs ||
-                !config.exps ||
-                config.logs.length !== config.size ||
-                config.exps.length !== config.size
-            ) {
-                throw new Error("Initialization failed.")
-            }
-        },
-
-        // Evaluates the Lagrange interpolation polynomial at x=`at` for
-        // individual config.bits-length segments of each share in the `shares`
-        // Array. Each share is expressed in base `inputRadix`. The output
-        // is expressed in base `outputRadix'.
-        combine: function(shares, at) {
-            var i,
-                j,
-                len,
-                len2,
-                result = "",
-                setBits,
-                share,
-                splitShare,
-                x = [],
-                y = []
-
-            at = at || 0
-
-            for (i = 0, len = shares.length; i < len; i++) {
-                share = this.extractShareComponents(shares[i])
-
-                // All shares must have the same bits settings.
-                if (setBits === undefined) {
-                    setBits = share.bits
-                } else if (share.bits !== setBits) {
-                    throw new Error(
-                        "Mismatched shares: Different bit settings."
-                    )
-                }
-
-                // Reset everything to the bit settings of the shares.
-                if (config.bits !== setBits) {
-                    this.init(setBits)
-                }
-
-                // Proceed if this share.id is not already in the Array 'x' and
-                // then split each share's hex data into an Array of Integers,
-                // then 'rotate' those arrays where the first element of each row is converted to
-                // its own array, the second element of each to its own Array, and so on for all of the rest.
-                // Essentially zipping all of the shares together.
-                //
-                // e.g.
-                //   [ 193, 186, 29, 150, 5, 120, 44, 46, 49, 59, 6, 1, 102, 98, 177, 196 ]
-                //   [ 53, 105, 139, 49, 187, 240, 91, 92, 98, 118, 12, 2, 204, 196, 127, 149 ]
-                //   [ 146, 211, 249, 167, 209, 136, 118, 114, 83, 77, 10, 3, 170, 166, 206, 81 ]
-                //
-                // becomes:
-                //
-                // [ [ 193, 53, 146 ],
-                //   [ 186, 105, 211 ],
-                //   [ 29, 139, 249 ],
-                //   [ 150, 49, 167 ],
-                //   [ 5, 187, 209 ],
-                //   [ 120, 240, 136 ],
-                //   [ 44, 91, 118 ],
-                //   [ 46, 92, 114 ],
-                //   [ 49, 98, 83 ],
-                //   [ 59, 118, 77 ],
-                //   [ 6, 12, 10 ],
-                //   [ 1, 2, 3 ],
-                //   [ 102, 204, 170 ],
-                //   [ 98, 196, 166 ],
-                //   [ 177, 127, 206 ],
-                //   [ 196, 149, 81 ] ]
-                //
-                if (x.indexOf(share.id) === -1) {
-                    x.push(share.id)
-                    splitShare = splitNumStringToIntArray(hex2bin(share.data))
-                    for (j = 0, len2 = splitShare.length; j < len2; j++) {
-                        y[j] = y[j] || []
-                        y[j][x.length - 1] = splitShare[j]
-                    }
-                }
-            }
-
-            // Extract the secret from the 'rotated' share data and return a
-            // string of Binary digits which represent the secret directly. or in the
-            // case of a newShare() return the binary string representing just that
-            // new share.
-            for (i = 0, len = y.length; i < len; i++) {
-                result = padLeft(lagrange(at, x, y[i]).toString(2)) + result
-            }
-
-            // If 'at' is non-zero combine() was called from newShare(). In this
-            // case return the result (the new share data) directly.
-            //
-            // Otherwise find the first '1' which was added in the share() function as a padding marker
-            // and return only the data after the padding and the marker. Convert this Binary string
-            // to hex, which represents the final secret result (which can be converted from hex back
-            // to the original string in user space using `hex2str()`).
-            return bin2hex(
-                at >= 1 ? result : result.slice(result.indexOf("1") + 1)
-            )
-        },
-
-        getConfig: function() {
-            var obj = {}
-            obj.radix = config.radix
-            obj.bits = config.bits
-            obj.maxShares = config.maxShares
-            obj.hasCSPRNG = isSetRNG()
-            obj.typeCSPRNG = config.typeCSPRNG
-            return obj
-        },
-
-        // Given a public share, extract the bits (Integer), share ID (Integer), and share data (Hex)
-        // and return an Object containing those components.
-        extractShareComponents: function(share) {
-            var bits,
-                id,
-                idLen,
-                max,
-                obj = {},
-                regexStr,
-                shareComponents
-
-            // Extract the first char which represents the bits in Base 36
-            bits = parseInt(share.substr(0, 1), 36)
-
-            if (
-                bits &&
-                (typeof bits !== "number" ||
-                    bits % 1 !== 0 ||
-                    bits < defaults.minBits ||
-                    bits > defaults.maxBits)
-            ) {
-                throw new Error(
-                    "Invalid share : Number of bits must be an integer between " +
-                        defaults.minBits +
-                        " and " +
-                        defaults.maxBits +
-                        ", inclusive."
-                )
-            }
-
-            // calc the max shares allowed for given bits
-            max = Math.pow(2, bits) - 1
-
-            // Determine the ID length which is variable and based on the bit count.
-            idLen = (Math.pow(2, bits) - 1).toString(config.radix).length
-
-            // Extract all the parts now that the segment sizes are known.
-            regexStr =
-                "^([a-kA-K3-9]{1})([a-fA-F0-9]{" + idLen + "})([a-fA-F0-9]+)$"
-            shareComponents = new RegExp(regexStr).exec(share)
-
-            // The ID is a Hex number and needs to be converted to an Integer
-            if (shareComponents) {
-                id = parseInt(shareComponents[2], config.radix)
-            }
-
-            if (typeof id !== "number" || id % 1 !== 0 || id < 1 || id > max) {
-                throw new Error(
-                    "Invalid share : Share id must be an integer between 1 and " +
-                        config.maxShares +
-                        ", inclusive."
-                )
-            }
-
-            if (shareComponents && shareComponents[3]) {
-                obj.bits = bits
-                obj.id = id
-                obj.data = shareComponents[3]
-                return obj
-            }
-
-            throw new Error("The share data provided is invalid : " + share)
-        },
-
-        // Set the PRNG to use. If no RNG function is supplied, pick a default using getRNG()
-        setRNG: function(rng) {
-            var errPrefix = "Random number generator is invalid ",
-                errSuffix =
-                    " Supply an CSPRNG of the form function(bits){} that returns a string containing 'bits' number of random 1's and 0's."
-
-            if (
-                rng &&
-                typeof rng === "string" &&
-                CSPRNGTypes.indexOf(rng) === -1
-            ) {
-                throw new Error("Invalid RNG type argument : '" + rng + "'")
-            }
-
-            // If RNG was not specified at all,
-            // try to pick one appropriate for this env.
-            if (!rng) {
-                rng = getRNG()
-            }
-
-            // If `rng` is a string, try to forcibly
-            // set the RNG to the type specified.
-            if (rng && typeof rng === "string") {
-                rng = getRNG(rng)
-            }
-
-            if (runCSPRNGTest) {
-                if (rng && typeof rng !== "function") {
-                    throw new Error(errPrefix + "(Not a function)." + errSuffix)
-                }
-
-                if (rng && typeof rng(config.bits) !== "string") {
-                    throw new Error(
-                        errPrefix + "(Output is not a string)." + errSuffix
-                    )
-                }
-
-                if (rng && !parseInt(rng(config.bits), 2)) {
-                    throw new Error(
-                        errPrefix +
-                            "(Binary string output not parseable to an Integer)." +
-                            errSuffix
-                    )
-                }
-
-                if (rng && rng(config.bits).length > config.bits) {
-                    throw new Error(
-                        errPrefix +
-                            "(Output length is greater than config.bits)." +
-                            errSuffix
-                    )
-                }
-
-                if (rng && rng(config.bits).length < config.bits) {
-                    throw new Error(
-                        errPrefix +
-                            "(Output length is less than config.bits)." +
-                            errSuffix
-                    )
-                }
-            }
-
-            config.rng = rng
-
-            return true
-        },
-
-        // Converts a given UTF16 character string to the HEX representation.
-        // Each character of the input string is represented by
-        // `bytesPerChar` bytes in the output string which defaults to 2.
-        str2hex: function(str, bytesPerChar) {
-            var hexChars,
-                max,
-                out = "",
-                neededBytes,
-                num,
-                i,
-                len
-
-            if (typeof str !== "string") {
-                throw new Error("Input must be a character string.")
-            }
-
-            if (!bytesPerChar) {
-                bytesPerChar = defaults.bytesPerChar
-            }
-
-            if (
-                typeof bytesPerChar !== "number" ||
-                bytesPerChar < 1 ||
-                bytesPerChar > defaults.maxBytesPerChar ||
-                bytesPerChar % 1 !== 0
-            ) {
-                throw new Error(
-                    "Bytes per character must be an integer between 1 and " +
-                        defaults.maxBytesPerChar +
-                        ", inclusive."
-                )
-            }
-
-            hexChars = 2 * bytesPerChar
-            max = Math.pow(16, hexChars) - 1
-
-            for (i = 0, len = str.length; i < len; i++) {
-                num = str[i].charCodeAt()
-
-                if (isNaN(num)) {
-                    throw new Error("Invalid character: " + str[i])
-                }
-
-                if (num > max) {
-                    neededBytes = Math.ceil(Math.log(num + 1) / Math.log(256))
-                    throw new Error(
-                        "Invalid character code (" +
-                            num +
-                            "). Maximum allowable is 256^bytes-1 (" +
-                            max +
-                            "). To convert this character, use at least " +
-                            neededBytes +
-                            " bytes."
-                    )
-                }
-
-                out = padLeft(num.toString(16), hexChars) + out
-            }
-            return out
-        },
-
-        // Converts a given HEX number string to a UTF16 character string.
-        hex2str: function(str, bytesPerChar) {
-            var hexChars,
-                out = "",
-                i,
-                len
-
-            if (typeof str !== "string") {
-                throw new Error("Input must be a hexadecimal string.")
-            }
-            bytesPerChar = bytesPerChar || defaults.bytesPerChar
-
-            if (
-                typeof bytesPerChar !== "number" ||
-                bytesPerChar % 1 !== 0 ||
-                bytesPerChar < 1 ||
-                bytesPerChar > defaults.maxBytesPerChar
-            ) {
-                throw new Error(
-                    "Bytes per character must be an integer between 1 and " +
-                        defaults.maxBytesPerChar +
-                        ", inclusive."
-                )
-            }
-
-            hexChars = 2 * bytesPerChar
-
-            str = padLeft(str, hexChars)
-
-            for (i = 0, len = str.length; i < len; i += hexChars) {
-                out =
-                    String.fromCharCode(
-                        parseInt(str.slice(i, i + hexChars), 16)
-                    ) + out
-            }
-
-            return out
-        },
-
-        // Generates a random bits-length number string using the PRNG
-        random: function(bits) {
-            if (
-                typeof bits !== "number" ||
-                bits % 1 !== 0 ||
-                bits < 2 ||
-                bits > 65536
-            ) {
-                throw new Error(
-                    "Number of bits must be an Integer between 1 and 65536."
-                )
-            }
-
-            return bin2hex(config.rng(bits))
-        },
-
-        // Divides a `secret` number String str expressed in radix `inputRadix` (optional, default 16)
-        // into `numShares` shares, each expressed in radix `outputRadix` (optional, default to `inputRadix`),
-        // requiring `threshold` number of shares to reconstruct the secret.
-        // Optionally, zero-pads the secret to a length that is a multiple of padLength before sharing.
-        share: function(secret, numShares, threshold, padLength) {
-            var neededBits,
-                subShares,
-                x = new Array(numShares),
-                y = new Array(numShares),
-                i,
-                j,
-                len
-
-            // Security:
-            // For additional security, pad in multiples of 128 bits by default.
-            // A small trade-off in larger share size to help prevent leakage of information
-            // about small-ish secrets and increase the difficulty of attacking them.
-            padLength = padLength || 128
-
-            if (typeof secret !== "string") {
-                throw new Error("Secret must be a string.")
-            }
-
-            if (
-                typeof numShares !== "number" ||
-                numShares % 1 !== 0 ||
-                numShares < 2
-            ) {
-                throw new Error(
-                    "Number of shares must be an integer between 2 and 2^bits-1 (" +
-                        config.maxShares +
-                        "), inclusive."
-                )
-            }
-
-            if (numShares > config.maxShares) {
-                neededBits = Math.ceil(Math.log(numShares + 1) / Math.LN2)
-                throw new Error(
-                    "Number of shares must be an integer between 2 and 2^bits-1 (" +
-                        config.maxShares +
-                        "), inclusive. To create " +
-                        numShares +
-                        " shares, use at least " +
-                        neededBits +
-                        " bits."
-                )
-            }
-
-            if (
-                typeof threshold !== "number" ||
-                threshold % 1 !== 0 ||
-                threshold < 2
-            ) {
-                throw new Error(
-                    "Threshold number of shares must be an integer between 2 and 2^bits-1 (" +
-                        config.maxShares +
-                        "), inclusive."
-                )
-            }
-
-            if (threshold > config.maxShares) {
-                neededBits = Math.ceil(Math.log(threshold + 1) / Math.LN2)
-                throw new Error(
-                    "Threshold number of shares must be an integer between 2 and 2^bits-1 (" +
-                        config.maxShares +
-                        "), inclusive.  To use a threshold of " +
-                        threshold +
-                        ", use at least " +
-                        neededBits +
-                        " bits."
-                )
-            }
-
-            if (threshold > numShares) {
-                throw new Error(
-                    "Threshold number of shares was " +
-                        threshold +
-                        " but must be less than or equal to the " +
-                        numShares +
-                        " shares specified as the total to generate."
-                )
-            }
-
-            if (
-                typeof padLength !== "number" ||
-                padLength % 1 !== 0 ||
-                padLength < 0 ||
-                padLength > 1024
-            ) {
-                throw new Error(
-                    "Zero-pad length must be an integer between 0 and 1024 inclusive."
-                )
-            }
-
-            secret = "1" + hex2bin(secret) // prepend a 1 as a marker so that we can preserve the correct number of leading zeros in our secret
-            secret = splitNumStringToIntArray(secret, padLength)
-
-            for (i = 0, len = secret.length; i < len; i++) {
-                subShares = getShares(secret[i], numShares, threshold)
-                for (j = 0; j < numShares; j++) {
-                    x[j] = x[j] || subShares[j].x.toString(config.radix)
-                    y[j] = padLeft(subShares[j].y.toString(2)) + (y[j] || "")
-                }
-            }
-
-            for (i = 0; i < numShares; i++) {
-                x[i] = constructPublicShareString(
-                    config.bits,
-                    x[i],
-                    bin2hex(y[i])
-                )
-            }
-
-            return x
-        },
-
-        // Generate a new share with id `id` (a number between 1 and 2^bits-1)
-        // `id` can be a Number or a String in the default radix (16)
-        newShare: function(id, shares) {
-            var share, radid
-
-            if (id && typeof id === "string") {
-                id = parseInt(id, config.radix)
-            }
-
-            radid = id.toString(config.radix)
-
-            if (id && radid && shares && shares[0]) {
-                share = this.extractShareComponents(shares[0])
-                return constructPublicShareString(
-                    share.bits,
-                    radid,
-                    this.combine(shares, id)
-                )
-            }
-
-            throw new Error(
-                "Invalid 'id' or 'shares' Array argument to newShare()."
-            )
-        },
-
-        /* test-code */
-        // export private functions so they can be unit tested directly.
-        _reset: reset,
-        _padLeft: padLeft,
-        _hex2bin: hex2bin,
-        _bin2hex: bin2hex,
-        _hasCryptoGetRandomValues: hasCryptoGetRandomValues,
-        _hasCryptoRandomBytes: hasCryptoRandomBytes,
-        _getRNG: getRNG,
-        _isSetRNG: isSetRNG,
-        _splitNumStringToIntArray: splitNumStringToIntArray,
-        _horner: horner,
-        _lagrange: lagrange,
-        _getShares: getShares,
-        _constructPublicShareString: constructPublicShareString
-        /* end-test-code */
-    }
-
-    // Always initialize secrets with default settings.
-    secrets.init()
-
-    return secrets
-})
-
-
-/***/ }),
-
 /***/ 4189:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -99532,12 +98472,13 @@ async function reconstitute (
     factors[factor.id] = factor
     const pad = Buffer.from(factor.pad, 'base64')
     const share = this.shares[index]
-    let factorMaterial = xor(pad, share)
-    if (Buffer.byteLength(factorMaterial) > 32) {
-      factorMaterial = factorMaterial.subarray(
-        Buffer.byteLength(factorMaterial) - 32
-      )
-    }
+    const factorMaterial = xor(pad, share)
+    // No longer needed in MFKDF2
+    // if (Buffer.byteLength(factorMaterial) > 32) {
+    //   factorMaterial = factorMaterial.subarray(
+    //     Buffer.byteLength(factorMaterial) - 32
+    //   )
+    // }
     material[factor.id] = factorMaterial
   }
 
@@ -99618,16 +98559,17 @@ async function reconstitute (
   for (const [index, factor] of Object.values(factors).entries()) {
     const share = shares[index]
     const salt = crypto.randomBytes(32).toString('base64')
-    let stretched = Buffer.isBuffer(material[factor.id])
+    const stretched = Buffer.isBuffer(material[factor.id])
       ? material[factor.id]
       : Buffer.from(await hkdf('sha256', data[factor.id], salt, '', 32))
 
-    if (Buffer.byteLength(share) > 32) {
-      stretched = Buffer.concat([
-        Buffer.alloc(Buffer.byteLength(share) - 32),
-        stretched
-      ])
-    }
+    // No longer needed in MFKDF2
+    // if (Buffer.byteLength(share) > 32) {
+    //   stretched = Buffer.concat([
+    //     Buffer.alloc(Buffer.byteLength(share) - 32),
+    //     stretched,
+    //   ]);
+    // }
 
     factor.pad = xor(share, stretched).toString('base64')
     factor.salt = factor.salt ? factor.salt : salt
@@ -100571,15 +99513,16 @@ async function key (policy, factors, options) {
         }
 
         const pad = Buffer.from(factor.pad, 'base64')
-        let stretched = Buffer.from(
+        const stretched = Buffer.from(
           await hkdf('sha256', material.data, factor.salt, '', 32)
         )
-        if (Buffer.byteLength(pad) > 32) {
-          stretched = Buffer.concat([
-            Buffer.alloc(Buffer.byteLength(pad) - 32),
-            stretched
-          ])
-        }
+        // No longer needed in MFKDF2
+        // if (Buffer.byteLength(pad) > 32) {
+        //   stretched = Buffer.concat([
+        //     Buffer.alloc(Buffer.byteLength(pad) - 32),
+        //     stretched
+        //   ])
+        // }
 
         share = xor(pad, stretched)
       }
@@ -101359,7 +100302,9 @@ module.exports.validate = validate
  * @author Multifactor <support@multifactor.com>
  */
 const xor = __webpack_require__(7295)
-const secrets = __webpack_require__(1134)
+// const secrets = require("secrets.js-34r7h");
+// const sss = require("shamir-secret-sharing");
+const sss = __webpack_require__(9752)
 
 /**
  * K-of-N secret combining. Uses bitwise XOR for k=n, Shamir's Secret Sharing for 1 < K < N, and direct secret sharing for K = 1.
@@ -101391,7 +100336,9 @@ function combine (shares, k, n) {
   if (!Number.isInteger(k)) throw new TypeError('k must be an integer')
   if (!(k > 0)) throw new RangeError('k must be positive')
   if (k > n) throw new RangeError('k must be less than or equal to n')
-  if (shares.length < k) { throw new RangeError('not enough shares provided to retrieve secret') }
+  if (shares.length < k) {
+    throw new RangeError('not enough shares provided to retrieve secret')
+  }
 
   if (k === 1) {
     // 1-of-n
@@ -101411,24 +100358,17 @@ function combine (shares, k, n) {
       )
     }
 
-    const bits = Math.max(Math.ceil(Math.log(n + 1) / Math.LN2), 3)
-    secrets.init(bits)
-
     const formatted = []
 
     for (const [index, share] of shares.entries()) {
       if (share) {
-        let value = Number(bits).toString(36) // bits
-        const maxIdLength = (Math.pow(2, bits) - 1).toString(16).length
-        value += (index + 1).toString(16).padStart(maxIdLength, '0') // id
-        value += share.toString('hex')
-        formatted.push(value)
+        const id = new Uint8Array([index + 1])
+        const value = Buffer.concat([share, id])
+        formatted.push(new Uint8Array(value))
       }
     }
 
-    if (formatted.length < k) { throw new RangeError('not enough shares provided to retrieve secret') }
-
-    return Buffer.from(secrets.combine(formatted), 'hex')
+    return Buffer.from(sss.combine(formatted))
   }
 }
 module.exports.combine = combine
@@ -101453,6 +100393,409 @@ module.exports = {
 
 /***/ }),
 
+/***/ 9752:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+/* istanbul ignore file */
+// const { getRandomBytes } = require('shamir-secret-sharing/csprng')
+const crypto = __webpack_require__(5835)
+const getRandomBytes = crypto.randomBytes
+// The Polynomial used is: x⁸ + x⁴ + x³ + x + 1
+//
+// Lookup tables pulled from:
+//
+//     * https://github.com/hashicorp/vault/blob/9d46671659cbfe7bbd3e78d1073dfb22936a4437/shamir/tables.go
+//     * http://www.samiam.org/galois.html
+//
+// 0xe5 (229) is used as the generator.
+// Provides log(X)/log(g) at each index X.
+const LOG_TABLE = new Uint8Array([
+  0x00, 0xff, 0xc8, 0x08, 0x91, 0x10, 0xd0, 0x36, 0x5a, 0x3e, 0xd8, 0x43, 0x99,
+  0x77, 0xfe, 0x18, 0x23, 0x20, 0x07, 0x70, 0xa1, 0x6c, 0x0c, 0x7f, 0x62, 0x8b,
+  0x40, 0x46, 0xc7, 0x4b, 0xe0, 0x0e, 0xeb, 0x16, 0xe8, 0xad, 0xcf, 0xcd, 0x39,
+  0x53, 0x6a, 0x27, 0x35, 0x93, 0xd4, 0x4e, 0x48, 0xc3, 0x2b, 0x79, 0x54, 0x28,
+  0x09, 0x78, 0x0f, 0x21, 0x90, 0x87, 0x14, 0x2a, 0xa9, 0x9c, 0xd6, 0x74, 0xb4,
+  0x7c, 0xde, 0xed, 0xb1, 0x86, 0x76, 0xa4, 0x98, 0xe2, 0x96, 0x8f, 0x02, 0x32,
+  0x1c, 0xc1, 0x33, 0xee, 0xef, 0x81, 0xfd, 0x30, 0x5c, 0x13, 0x9d, 0x29, 0x17,
+  0xc4, 0x11, 0x44, 0x8c, 0x80, 0xf3, 0x73, 0x42, 0x1e, 0x1d, 0xb5, 0xf0, 0x12,
+  0xd1, 0x5b, 0x41, 0xa2, 0xd7, 0x2c, 0xe9, 0xd5, 0x59, 0xcb, 0x50, 0xa8, 0xdc,
+  0xfc, 0xf2, 0x56, 0x72, 0xa6, 0x65, 0x2f, 0x9f, 0x9b, 0x3d, 0xba, 0x7d, 0xc2,
+  0x45, 0x82, 0xa7, 0x57, 0xb6, 0xa3, 0x7a, 0x75, 0x4f, 0xae, 0x3f, 0x37, 0x6d,
+  0x47, 0x61, 0xbe, 0xab, 0xd3, 0x5f, 0xb0, 0x58, 0xaf, 0xca, 0x5e, 0xfa, 0x85,
+  0xe4, 0x4d, 0x8a, 0x05, 0xfb, 0x60, 0xb7, 0x7b, 0xb8, 0x26, 0x4a, 0x67, 0xc6,
+  0x1a, 0xf8, 0x69, 0x25, 0xb3, 0xdb, 0xbd, 0x66, 0xdd, 0xf1, 0xd2, 0xdf, 0x03,
+  0x8d, 0x34, 0xd9, 0x92, 0x0d, 0x63, 0x55, 0xaa, 0x49, 0xec, 0xbc, 0x95, 0x3c,
+  0x84, 0x0b, 0xf5, 0xe6, 0xe7, 0xe5, 0xac, 0x7e, 0x6e, 0xb9, 0xf9, 0xda, 0x8e,
+  0x9a, 0xc9, 0x24, 0xe1, 0x0a, 0x15, 0x6b, 0x3a, 0xa0, 0x51, 0xf4, 0xea, 0xb2,
+  0x97, 0x9e, 0x5d, 0x22, 0x88, 0x94, 0xce, 0x19, 0x01, 0x71, 0x4c, 0xa5, 0xe3,
+  0xc5, 0x31, 0xbb, 0xcc, 0x1f, 0x2d, 0x3b, 0x52, 0x6f, 0xf6, 0x2e, 0x89, 0xf7,
+  0xc0, 0x68, 0x1b, 0x64, 0x04, 0x06, 0xbf, 0x83, 0x38
+])
+// Provides the exponentiation value at each index X.
+const EXP_TABLE = new Uint8Array([
+  0x01, 0xe5, 0x4c, 0xb5, 0xfb, 0x9f, 0xfc, 0x12, 0x03, 0x34, 0xd4, 0xc4, 0x16,
+  0xba, 0x1f, 0x36, 0x05, 0x5c, 0x67, 0x57, 0x3a, 0xd5, 0x21, 0x5a, 0x0f, 0xe4,
+  0xa9, 0xf9, 0x4e, 0x64, 0x63, 0xee, 0x11, 0x37, 0xe0, 0x10, 0xd2, 0xac, 0xa5,
+  0x29, 0x33, 0x59, 0x3b, 0x30, 0x6d, 0xef, 0xf4, 0x7b, 0x55, 0xeb, 0x4d, 0x50,
+  0xb7, 0x2a, 0x07, 0x8d, 0xff, 0x26, 0xd7, 0xf0, 0xc2, 0x7e, 0x09, 0x8c, 0x1a,
+  0x6a, 0x62, 0x0b, 0x5d, 0x82, 0x1b, 0x8f, 0x2e, 0xbe, 0xa6, 0x1d, 0xe7, 0x9d,
+  0x2d, 0x8a, 0x72, 0xd9, 0xf1, 0x27, 0x32, 0xbc, 0x77, 0x85, 0x96, 0x70, 0x08,
+  0x69, 0x56, 0xdf, 0x99, 0x94, 0xa1, 0x90, 0x18, 0xbb, 0xfa, 0x7a, 0xb0, 0xa7,
+  0xf8, 0xab, 0x28, 0xd6, 0x15, 0x8e, 0xcb, 0xf2, 0x13, 0xe6, 0x78, 0x61, 0x3f,
+  0x89, 0x46, 0x0d, 0x35, 0x31, 0x88, 0xa3, 0x41, 0x80, 0xca, 0x17, 0x5f, 0x53,
+  0x83, 0xfe, 0xc3, 0x9b, 0x45, 0x39, 0xe1, 0xf5, 0x9e, 0x19, 0x5e, 0xb6, 0xcf,
+  0x4b, 0x38, 0x04, 0xb9, 0x2b, 0xe2, 0xc1, 0x4a, 0xdd, 0x48, 0x0c, 0xd0, 0x7d,
+  0x3d, 0x58, 0xde, 0x7c, 0xd8, 0x14, 0x6b, 0x87, 0x47, 0xe8, 0x79, 0x84, 0x73,
+  0x3c, 0xbd, 0x92, 0xc9, 0x23, 0x8b, 0x97, 0x95, 0x44, 0xdc, 0xad, 0x40, 0x65,
+  0x86, 0xa2, 0xa4, 0xcc, 0x7f, 0xec, 0xc0, 0xaf, 0x91, 0xfd, 0xf7, 0x4f, 0x81,
+  0x2f, 0x5b, 0xea, 0xa8, 0x1c, 0x02, 0xd1, 0x98, 0x71, 0xed, 0x25, 0xe3, 0x24,
+  0x06, 0x68, 0xb3, 0x93, 0x2c, 0x6f, 0x3e, 0x6c, 0x0a, 0xb8, 0xce, 0xae, 0x74,
+  0xb1, 0x42, 0xb4, 0x1e, 0xd3, 0x49, 0xe9, 0x9c, 0xc8, 0xc6, 0xc7, 0x22, 0x6e,
+  0xdb, 0x20, 0xbf, 0x43, 0x51, 0x52, 0x66, 0xb2, 0x76, 0x60, 0xda, 0xc5, 0xf3,
+  0xf6, 0xaa, 0xcd, 0x9a, 0xa0, 0x75, 0x54, 0x0e, 0x01
+])
+// Combines two numbers in GF(2^8).
+// This can be used for both addition and subtraction.
+function add (a, b) {
+  if (!Number.isInteger(a) || a < 0 || a > 255) {
+    throw new RangeError('Number is out of Uint8 range')
+  }
+  if (!Number.isInteger(b) || b < 0 || b > 255) {
+    throw new RangeError('Number is out of Uint8 range')
+  }
+  return a ^ b
+}
+// Divides two numbers in GF(2^8).
+function div (a, b) {
+  if (!Number.isInteger(a) || a < 0 || a > 255) {
+    throw new RangeError('Number is out of Uint8 range')
+  }
+  if (!Number.isInteger(b) || b < 0 || b > 255) {
+    throw new RangeError('Number is out of Uint8 range')
+  }
+  // This should never happen
+  if (b === 0) {
+    throw new Error('cannot divide by zero')
+  }
+  const logA = LOG_TABLE[a]
+  const logB = LOG_TABLE[b]
+  const diff = (logA - logB + 255) % 255
+  const result = EXP_TABLE[diff]
+  return a === 0 ? 0 : result
+}
+// Multiplies two numbers in GF(2^8).
+function mult (a, b) {
+  if (!Number.isInteger(a) || a < 0 || a > 255) {
+    throw new RangeError('Number is out of Uint8 range')
+  }
+  if (!Number.isInteger(b) || b < 0 || b > 255) {
+    throw new RangeError('Number is out of Uint8 range')
+  }
+  const logA = LOG_TABLE[a]
+  const logB = LOG_TABLE[b]
+  const sum = (logA + logB) % 255
+  const result = EXP_TABLE[sum]
+  return a === 0 || b === 0 ? 0 : result
+}
+// Takes N sample points and returns the value at a given x using a lagrange interpolation.
+function interpolatePolynomial (xSamples, ySamples, x) {
+  if (xSamples.length !== ySamples.length) {
+    throw new Error('sample length mistmatch')
+  }
+  const limit = xSamples.length
+  let basis = 0
+  let result = 0
+  for (let i = 0; i < limit; i++) {
+    basis = 1
+    for (let j = 0; j < limit; ++j) {
+      if (i === j) {
+        continue
+      }
+      const num = add(x, xSamples[j])
+      const denom = add(xSamples[i], xSamples[j])
+      const term = div(num, denom)
+      basis = mult(basis, term)
+    }
+    result = add(result, mult(ySamples[i], basis))
+  }
+  return result
+}
+// Evaluates a polynomial with the given x using Horner's method.
+function evaluate (coefficients, x, degree) {
+  if (x === 0) {
+    throw new Error('cannot evaluate secret polynomial at zero')
+  }
+  let result = coefficients[degree]
+  for (let i = degree - 1; i >= 0; i--) {
+    const coefficient = coefficients[i]
+    result = add(mult(result, x), coefficient)
+  }
+  return result
+}
+// Creates a pseudo-random set of coefficients for a polynomial.
+function newCoefficients (intercept, degree) {
+  const coefficients = new Uint8Array(degree + 1)
+  coefficients[0] = intercept
+  coefficients.set(getRandomBytes(degree), 1)
+  return coefficients
+}
+// Creates a set of values from [1, 256).
+// Returns a psuedo-random shuffling of the set.
+function newCoordinates () {
+  const coordinates = new Uint8Array(255)
+  for (let i = 0; i < 255; i++) {
+    coordinates[i] = i + 1
+  }
+  // Pseudo-randomize the array of coordinates.
+  //
+  // This impl maps almost perfectly because both of the lists (coordinates and randomIndices)
+  // have a length of 255 and byte values are between 0 and 255 inclusive. The only value that
+  // does not map neatly here is if the random byte is 255, since that value used as an index
+  // would be out of bounds. Thus, for bytes whose value is 255, wrap around to 0.
+  //
+  // WARNING: This shuffle is biased and should NOT be used if an unbiased shuffle is required.
+  //
+  // However, Shamir-based secret sharing does not require any particular indexing (shuffled or
+  // not) for its security properties to hold; this means including the biased shuffle is not
+  // itself problematic here.
+  // const randomIndices = getRandomBytes(255);
+  // for (let i = 0; i < 255; i++) {
+  //   const j = randomIndices[i] % 255; // Make sure to handle the case where the byte is 255.
+  //   const temp = coordinates[i];
+  //   coordinates[i] = coordinates[j];
+  //   coordinates[j] = temp;
+  // }
+  return coordinates
+}
+// Helpers for declarative argument validation.
+const AssertArgument = {
+  instanceOf (object, constructor, message) {
+    if (object.constructor !== constructor) {
+      throw new TypeError(message)
+    }
+  },
+  inRange (n, start, until, message) {
+    if (!(start < until && n >= start && n < until)) {
+      throw new RangeError(message)
+    }
+  },
+  greaterThanOrEqualTo (a, b, message) {
+    if (a < b) {
+      throw new Error(message)
+    }
+  },
+  equalTo (a, b, message) {
+    if (a !== b) {
+      throw new Error(message)
+    }
+  }
+}
+/**
+ * Splits a `secret` into `shares` number of shares, requiring `threshold` of them to reconstruct `secret`.
+ *
+ * @param secret The secret value to split into shares.
+ * @param shares The total number of shares to split `secret` into. Must be at least 2 and at most 255.
+ * @param threshold The minimum number of shares required to reconstruct `secret`. Must be at least 2 and at most 255.
+ * @returns A list of `shares` shares.
+ */
+function split (secret, shares, threshold) {
+  // secret must be a non-empty Uint8Array
+  AssertArgument.instanceOf(secret, Uint8Array, 'secret must be a Uint8Array')
+  AssertArgument.greaterThanOrEqualTo(
+    secret.byteLength,
+    1,
+    'secret cannot be empty'
+  )
+  // shares must be a number in the range [2, 256)
+  AssertArgument.instanceOf(shares, Number, 'shares must be a number')
+  AssertArgument.inRange(
+    shares,
+    2,
+    256,
+    'shares must be at least 2 and at most 255'
+  )
+  // threshold must be a number in the range [2, 256)
+  AssertArgument.instanceOf(threshold, Number, 'threshold must be a number')
+  AssertArgument.inRange(
+    threshold,
+    2,
+    256,
+    'threshold must be at least 2 and at most 255'
+  )
+  // total number of shares must be greater than or equal to the required threshold
+  AssertArgument.greaterThanOrEqualTo(
+    shares,
+    threshold,
+    'shares cannot be less than threshold'
+  )
+  const result = []
+  const secretLength = secret.byteLength
+  const xCoordinates = newCoordinates()
+  for (let i = 0; i < shares; i++) {
+    const share = new Uint8Array(secretLength)
+    // share[secretLength] = xCoordinates[i];
+    result.push(share)
+  }
+  const degree = threshold - 1
+  for (let i = 0; i < secretLength; i++) {
+    const byte = secret[i]
+    const coefficients = newCoefficients(byte, degree)
+    for (let j = 0; j < shares; ++j) {
+      const x = xCoordinates[j]
+      const y = evaluate(coefficients, x, degree)
+      result[j][i] = y
+    }
+  }
+  return result
+}
+/**
+ * Combines `shares` to reconstruct the secret.
+ *
+ * @param shares A list of shares to reconstruct the secret from. Must be at least 2 and at most 255.
+ * @returns The reconstructed secret.
+ */
+function combine (shares) {
+  // Shares must be an array with length in the range [2, 256)
+  AssertArgument.instanceOf(shares, Array, 'shares must be an Array')
+  AssertArgument.inRange(
+    shares.length,
+    2,
+    256,
+    'shares must have at least 2 and at most 255 elements'
+  )
+  // Shares must be a Uint8Array with at least 2 bytes and all shares must have the same byte length.
+  const share1 = shares[0]
+  AssertArgument.instanceOf(
+    share1,
+    Uint8Array,
+    'each share must be a Uint8Array'
+  )
+  for (const share of shares) {
+    AssertArgument.instanceOf(
+      share,
+      Uint8Array,
+      'each share must be a Uint8Array'
+    )
+    AssertArgument.greaterThanOrEqualTo(
+      share.byteLength,
+      2,
+      'each share must be at least 2 bytes'
+    )
+    AssertArgument.equalTo(
+      share.byteLength,
+      share1.byteLength,
+      'all shares must have the same byte length'
+    )
+  }
+  const sharesLength = shares.length
+  const shareLength = share1.byteLength
+  // This will be our reconstructed secret
+  const secretLength = shareLength - 1
+  const secret = new Uint8Array(secretLength)
+  const xSamples = new Uint8Array(sharesLength)
+  const ySamples = new Uint8Array(sharesLength)
+  const samples = new Set()
+  for (let i = 0; i < sharesLength; i++) {
+    const share = shares[i]
+    const sample = share[shareLength - 1]
+    // The last byte of each share should be a unique value between 1-255 inclusive.
+    if (samples.has(sample)) {
+      throw new Error(
+        'shares must contain unique values but a duplicate was found'
+      )
+    }
+    samples.add(sample)
+    xSamples[i] = sample
+  }
+  // Reconstruct each byte
+  for (let i = 0; i < secretLength; i++) {
+    // Set the y value for each sample
+    for (let j = 0; j < sharesLength; ++j) {
+      ySamples[j] = shares[j][i]
+    }
+    // Interpolate the polynomial and compute the value at 0
+    secret[i] = interpolatePolynomial(xSamples, ySamples, 0)
+  }
+  return secret
+}
+
+/**
+ * Reconstructs a share from the secret.
+ *
+ * @param shares A list of shares to reconstruct the secret from. Must be at least 2 and at most 255.
+ * @param index Index of the share to reconstruct.
+ * @returns The reconstructed share.
+ */
+function reshare (shares, index) {
+  // Shares must be an array with length in the range [2, 256)
+  AssertArgument.instanceOf(shares, Array, 'shares must be an Array')
+  AssertArgument.inRange(
+    shares.length,
+    2,
+    256,
+    'shares must have at least 2 and at most 255 elements'
+  )
+  // Shares must be a Uint8Array with at least 2 bytes and all shares must have the same byte length.
+  const share1 = shares[0]
+  AssertArgument.instanceOf(
+    share1,
+    Uint8Array,
+    'each share must be a Uint8Array'
+  )
+  for (const share of shares) {
+    AssertArgument.instanceOf(
+      share,
+      Uint8Array,
+      'each share must be a Uint8Array'
+    )
+    AssertArgument.greaterThanOrEqualTo(
+      share.byteLength,
+      2,
+      'each share must be at least 2 bytes'
+    )
+    AssertArgument.equalTo(
+      share.byteLength,
+      share1.byteLength,
+      'all shares must have the same byte length'
+    )
+  }
+  const sharesLength = shares.length
+  const shareLength = share1.byteLength
+  // This will be our reconstructed secret
+  const secretLength = shareLength - 1
+  const secret = new Uint8Array(secretLength)
+  const xSamples = new Uint8Array(sharesLength)
+  const ySamples = new Uint8Array(sharesLength)
+  const samples = new Set()
+  for (let i = 0; i < sharesLength; i++) {
+    const share = shares[i]
+    const sample = share[shareLength - 1]
+    // The last byte of each share should be a unique value between 1-255 inclusive.
+    if (samples.has(sample)) {
+      throw new Error(
+        'shares must contain unique values but a duplicate was found'
+      )
+    }
+    samples.add(sample)
+    xSamples[i] = sample
+  }
+  // Reconstruct each byte
+  for (let i = 0; i < secretLength; i++) {
+    // Set the y value for each sample
+    for (let j = 0; j < sharesLength; ++j) {
+      ySamples[j] = shares[j][i]
+    }
+    // Interpolate the polynomial and compute the value at 0
+    secret[i] = interpolatePolynomial(xSamples, ySamples, index)
+  }
+  return secret
+}
+
+module.exports = { combine, split, reshare }
+
+
+/***/ }),
+
 /***/ 6797:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -101466,7 +100809,8 @@ module.exports = {
  *
  * @author Multifactor <support@multifactor.com>
  */
-const secrets = __webpack_require__(1134)
+// const secrets = require('secrets.js-34r7h')
+const sss = __webpack_require__(9752)
 
 /**
  * K-of-N secret recovery. Uses bitwise XOR for k=n, Shamir's Secret Sharing for 1 < K < N, and direct secret sharing for K = 1.
@@ -101498,7 +100842,9 @@ function recover (shares, k, n) {
   if (!Number.isInteger(k)) throw new TypeError('k must be an integer')
   if (!(k > 0)) throw new RangeError('k must be positive')
   if (k > n) throw new RangeError('k must be less than or equal to n')
-  if (shares.length < k) { throw new RangeError('not enough shares provided to retrieve secret') }
+  if (shares.length < k) {
+    throw new RangeError('not enough shares provided to retrieve secret')
+  }
 
   if (k === 1) {
     // 1-of-n
@@ -101514,33 +100860,25 @@ function recover (shares, k, n) {
       )
     }
 
-    const bits = Math.max(Math.ceil(Math.log(n + 1) / Math.LN2), 3)
-    secrets.init(bits)
-
     const formatted = []
 
     for (const [index, share] of shares.entries()) {
       if (share) {
-        let value = Number(bits).toString(36) // bits
-        const maxIdLength = (Math.pow(2, bits) - 1).toString(16).length
-        value += (index + 1).toString(16).padStart(maxIdLength, '0') // id
-        let hex = share.toString('hex')
-        if (hex.charAt(0) === '0') hex = hex.substring(1)
-        value += hex
-        formatted.push(value)
+        const id = new Uint8Array([index + 1])
+        const value = Buffer.concat([share, id])
+        formatted.push(new Uint8Array(value))
       }
     }
 
-    if (formatted.length < k) { throw new RangeError('not enough shares provided to retrieve secret') }
+    if (formatted.length < k) {
+      throw new RangeError('not enough shares provided to retrieve secret')
+    }
 
     const newShares = []
 
     for (let i = 0; i < n; i++) {
-      const newShare = secrets.newShare(i + 1, formatted)
-      const components = secrets.extractShareComponents(newShare)
-      if (components.data.length % 2 === 1) { components.data = '0' + components.data }
-
-      newShares.push(Buffer.from(components.data, 'hex'))
+      const newShare = sss.reshare(formatted, i + 1)
+      newShares.push(Buffer.from(newShare))
     }
 
     return newShares
@@ -101566,7 +100904,8 @@ module.exports.recover = recover
  */
 const crypto = __webpack_require__(5835)
 const xor = __webpack_require__(7295)
-const secrets = __webpack_require__(1134)
+// const secrets = require("secrets.js-34r7h");
+const sss = __webpack_require__(9752)
 
 /**
  * K-of-N secret sharing. Uses bitwise XOR for k=n, Shamir's Secret Sharing for 1 < K < N, and direct secret sharing for K = 1.
@@ -101615,15 +100954,23 @@ function share (secret, k, n) {
     return shares
   } else {
     // k-of-n
-    secrets.init(Math.max(Math.ceil(Math.log(n + 1) / Math.LN2), 3))
-    const shares = secrets.share(secret.toString('hex'), n, k, 0)
+    const shares = sss.split(new Uint8Array(secret), n, k)
+    return shares.map((share) => Buffer.from(share))
+
+    // Old implementation using secrets.js
+    /*
+    secrets.init(Math.max(Math.ceil(Math.log(n + 1) / Math.LN2), 3));
+    const shares = secrets.share(secret.toString("hex"), n, k, 0);
     return shares.map((share) => {
-      const components = secrets.extractShareComponents(share)
+      const components = secrets.extractShareComponents(share);
 
-      if (components.data.length % 2 === 1) { components.data = '0' + components.data }
+      if (components.data.length % 2 === 1) {
+        components.data = "0" + components.data;
+      }
 
-      return Buffer.from(components.data, 'hex')
-    })
+      return Buffer.from(components.data, "hex");
+    });
+    */
   }
 }
 module.exports.share = share
@@ -102861,15 +102208,16 @@ async function key (factors, options) {
     realEntropy.push(factor.entropy)
 
     const salt = crypto.randomBytes(32).toString('base64')
-    let stretched = Buffer.from(
+    const stretched = Buffer.from(
       await hkdf('sha256', factor.data, salt, '', 32)
     )
-    if (Buffer.byteLength(share) > 32) {
-      stretched = Buffer.concat([
-        Buffer.alloc(Buffer.byteLength(share) - 32),
-        stretched
-      ])
-    }
+    // No longer needed in MFKDF2
+    // if (Buffer.byteLength(share) > 32) {
+    //   stretched = Buffer.concat([
+    //     Buffer.alloc(Buffer.byteLength(share) - 32),
+    //     stretched
+    //   ])
+    // }
 
     const pad = xor(share, stretched)
     const params = await factor.params({ key })
