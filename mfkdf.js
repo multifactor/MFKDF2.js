@@ -99195,11 +99195,11 @@ module.exports = MFKDFDerivedKey
  * @since 0.18.0
  * @memberOf MFKDFDerivedKey
  */
-function persistFactor(id) {
-  const index = this.policy.factors.findIndex((x) => x.id === id);
-  return this.shares[index];
+function persistFactor (id) {
+  const index = this.policy.factors.findIndex((x) => x.id === id)
+  return this.shares[index]
 }
-module.exports.persistFactor = persistFactor;
+module.exports.persistFactor = persistFactor
 
 
 /***/ }),
@@ -99218,9 +99218,10 @@ module.exports.persistFactor = persistFactor;
  * @author Multifactor <support@multifactor.com>
  */
 
-const { hkdf } = __webpack_require__(8213);
-const xor = __webpack_require__(7295);
-const share = (__webpack_require__(5080).share);
+const { hkdf } = __webpack_require__(8213)
+const xor = __webpack_require__(7295)
+const share = (__webpack_require__(5080).share)
+const crypto = __webpack_require__(5835)
 
 /**
  * Change the threshold of factors needed to derive a multi-factor derived key
@@ -99251,10 +99252,10 @@ const share = (__webpack_require__(5080).share);
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function setThreshold(threshold) {
-  await this.reconstitute([], [], threshold);
+async function setThreshold (threshold) {
+  await this.reconstitute([], [], threshold)
 }
-module.exports.setThreshold = setThreshold;
+module.exports.setThreshold = setThreshold
 
 /**
  * Remove a factor used to derive a multi-factor derived key
@@ -99285,10 +99286,10 @@ module.exports.setThreshold = setThreshold;
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function removeFactor(id) {
-  await this.reconstitute([id]);
+async function removeFactor (id) {
+  await this.reconstitute([id])
 }
-module.exports.removeFactor = removeFactor;
+module.exports.removeFactor = removeFactor
 
 /**
  * Remove factors used to derive a multi-factor derived key
@@ -99318,10 +99319,10 @@ module.exports.removeFactor = removeFactor;
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function removeFactors(ids) {
-  await this.reconstitute(ids);
+async function removeFactors (ids) {
+  await this.reconstitute(ids)
 }
-module.exports.removeFactors = removeFactors;
+module.exports.removeFactors = removeFactors
 
 /**
  * Add a factor used to derive a multi-factor derived key
@@ -99354,10 +99355,10 @@ module.exports.removeFactors = removeFactors;
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function addFactor(factor) {
-  await this.reconstitute([], [factor]);
+async function addFactor (factor) {
+  await this.reconstitute([], [factor])
 }
-module.exports.addFactor = addFactor;
+module.exports.addFactor = addFactor
 
 /**
  * Add new factors to derive a multi-factor derived key
@@ -99391,10 +99392,10 @@ module.exports.addFactor = addFactor;
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function addFactors(factors) {
-  await this.reconstitute([], factors);
+async function addFactors (factors) {
+  await this.reconstitute([], factors)
 }
-module.exports.addFactors = addFactors;
+module.exports.addFactors = addFactors
 
 /**
  * Update a factor used to derive a multi-factor derived key
@@ -99428,10 +99429,10 @@ module.exports.addFactors = addFactors;
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function recoverFactor(factor) {
-  await this.reconstitute([], [factor]);
+async function recoverFactor (factor) {
+  await this.reconstitute([], [factor])
 }
-module.exports.recoverFactor = recoverFactor;
+module.exports.recoverFactor = recoverFactor
 
 /**
  * Update the factors used to derive a multi-factor derived key
@@ -99466,10 +99467,10 @@ module.exports.recoverFactor = recoverFactor;
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function recoverFactors(factors) {
-  await this.reconstitute([], factors);
+async function recoverFactors (factors) {
+  await this.reconstitute([], factors)
 }
-module.exports.recoverFactors = recoverFactors;
+module.exports.recoverFactors = recoverFactors
 
 /**
  * Reconstitute the factors used to derive a multi-factor derived key
@@ -99505,138 +99506,140 @@ module.exports.recoverFactors = recoverFactors;
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function reconstitute(
+async function reconstitute (
   removeFactors = [],
   addFactors = [],
   threshold = this.policy.threshold
 ) {
   if (!Array.isArray(removeFactors)) {
-    throw new TypeError("removeFactors must be an array");
+    throw new TypeError('removeFactors must be an array')
   }
   if (!Array.isArray(addFactors)) {
-    throw new TypeError("addFactors must be an array");
+    throw new TypeError('addFactors must be an array')
   }
   if (!Number.isInteger(threshold)) {
-    throw new TypeError("threshold must be an integer");
+    throw new TypeError('threshold must be an integer')
   }
-  if (threshold <= 0) throw new RangeError("threshold must be positive");
+  if (threshold <= 0) throw new RangeError('threshold must be positive')
 
-  const factors = {};
-  const material = {};
-  const outputs = {};
-  const data = {};
+  const factors = {}
+  const material = {}
+  const outputs = {}
+  const data = {}
 
   // add existing factors
   for (const [index, factor] of this.policy.factors.entries()) {
-    factors[factor.id] = factor;
-    const pad = Buffer.from(factor.pad, "base64");
-    const share = this.shares[index];
-    let factorMaterial = xor(pad, share);
+    factors[factor.id] = factor
+    const pad = Buffer.from(factor.pad, 'base64')
+    const share = this.shares[index]
+    let factorMaterial = xor(pad, share)
     if (Buffer.byteLength(factorMaterial) > 32) {
       factorMaterial = factorMaterial.subarray(
         Buffer.byteLength(factorMaterial) - 32
-      );
+      )
     }
-    material[factor.id] = factorMaterial;
+    material[factor.id] = factorMaterial
   }
 
   // remove selected factors
   for (const factor of removeFactors) {
-    if (typeof factor !== "string") {
-      throw new TypeError("factor must be a string");
+    if (typeof factor !== 'string') {
+      throw new TypeError('factor must be a string')
     }
-    if (typeof factors[factor] !== "object") {
-      throw new RangeError("factor does not exist: " + factor);
+    if (typeof factors[factor] !== 'object') {
+      throw new RangeError('factor does not exist: ' + factor)
     }
-    delete factors[factor];
-    delete material[factor];
+    delete factors[factor]
+    delete material[factor]
   }
 
   // add new factors
   for (const factor of addFactors) {
     // type
-    if (typeof factor.type !== "string") {
-      throw new TypeError("factor type must be a string");
+    if (typeof factor.type !== 'string') {
+      throw new TypeError('factor type must be a string')
     }
     if (factor.type.length === 0) {
-      throw new RangeError("factor type must not be empty");
+      throw new RangeError('factor type must not be empty')
     }
 
     // id
-    if (typeof factor.id !== "string") {
-      throw new TypeError("factor id must be a string");
+    if (typeof factor.id !== 'string') {
+      throw new TypeError('factor id must be a string')
     }
     if (factor.id.length === 0) {
-      throw new RangeError("factor id must not be empty");
+      throw new RangeError('factor id must not be empty')
     }
 
     // data
     if (!Buffer.isBuffer(factor.data)) {
-      throw new TypeError("factor data must be a buffer");
+      throw new TypeError('factor data must be a buffer')
     }
     if (factor.data.length === 0) {
-      throw new RangeError("factor data must not be empty");
+      throw new RangeError('factor data must not be empty')
     }
 
     // params
-    if (typeof factor.params !== "function") {
-      throw new TypeError("factor params must be a function");
+    if (typeof factor.params !== 'function') {
+      throw new TypeError('factor params must be a function')
     }
 
     // output
-    if (typeof factor.output !== "function") {
-      throw new TypeError("factor output must be a function");
+    if (typeof factor.output !== 'function') {
+      throw new TypeError('factor output must be a function')
     }
 
     factors[factor.id] = {
       id: factor.id,
       type: factor.type,
-      params: await factor.params({ key: this.key }),
-    };
-    outputs[factor.id] = await factor.output();
-    data[factor.id] = factor.data;
-    if (Buffer.isBuffer(material[factor.id])) delete material[factor.id];
+      params: await factor.params({ key: this.key })
+    }
+    outputs[factor.id] = await factor.output()
+    data[factor.id] = factor.data
+    if (Buffer.isBuffer(material[factor.id])) delete material[factor.id]
   }
 
   // new factor id uniqueness
-  const ids = addFactors.map((factor) => factor.id);
+  const ids = addFactors.map((factor) => factor.id)
   if (new Set(ids).size !== ids.length) {
-    throw new RangeError("factor ids must be unique");
+    throw new RangeError('factor ids must be unique')
   }
 
   // threshold correctness
-  const n = Object.entries(factors).length;
+  const n = Object.entries(factors).length
   if (!(threshold <= n)) {
-    throw new RangeError("threshold cannot be greater than number of factors");
+    throw new RangeError('threshold cannot be greater than number of factors')
   }
 
-  const shares = share(this.secret, threshold, n);
+  const shares = share(this.secret, threshold, n)
 
-  const newFactors = [];
+  const newFactors = []
 
   for (const [index, factor] of Object.values(factors).entries()) {
-    const share = shares[index];
+    const share = shares[index]
+    const salt = crypto.randomBytes(32).toString('base64')
     let stretched = Buffer.isBuffer(material[factor.id])
       ? material[factor.id]
-      : Buffer.from(await hkdf("sha512", data[factor.id], "", "", 32));
+      : Buffer.from(await hkdf('sha256', data[factor.id], salt, '', 32))
 
     if (Buffer.byteLength(share) > 32) {
       stretched = Buffer.concat([
         Buffer.alloc(Buffer.byteLength(share) - 32),
-        stretched,
-      ]);
+        stretched
+      ])
     }
 
-    factor.pad = xor(share, stretched).toString("base64");
-    newFactors.push(factor);
+    factor.pad = xor(share, stretched).toString('base64')
+    factor.salt = factor.salt ? factor.salt : salt
+    newFactors.push(factor)
   }
 
-  this.policy.factors = newFactors;
-  this.policy.threshold = threshold;
-  this.outputs = outputs;
-  this.shares = shares;
+  this.policy.factors = newFactors
+  this.policy.threshold = threshold
+  this.outputs = outputs
+  this.shares = shares
 }
-module.exports.reconstitute = reconstitute;
+module.exports.reconstitute = reconstitute
 
 
 /***/ }),
@@ -99733,8 +99736,8 @@ module.exports.hmacsha1 = {
  *
  * @author Multifactor <support@multifactor.com>
  */
-const xor = __webpack_require__(7295);
-const crypto = __webpack_require__(5835);
+const xor = __webpack_require__(7295)
+const crypto = __webpack_require__(5835)
 
 /**
  * Derive a YubiKey-compatible MFKDF HMAC-SHA1 challenge-response factor
@@ -99764,39 +99767,39 @@ const crypto = __webpack_require__(5835);
  * @since 0.21.0
  * @memberof derive.factors
  */
-function hmacsha1(response) {
+function hmacsha1 (response) {
   if (!Buffer.isBuffer(response)) {
-    throw new TypeError("response must be a buffer");
+    throw new TypeError('response must be a buffer')
   }
 
   return async (params) => {
     const secret = xor(
       response.subarray(0, 20),
-      Buffer.from(params.pad, "hex")
-    );
+      Buffer.from(params.pad, 'hex')
+    )
 
     return {
-      type: "hmacsha1",
+      type: 'hmacsha1',
       data: secret,
       params: async ({ key }) => {
-        const challenge = crypto.randomBytes(64);
+        const challenge = crypto.randomBytes(64)
         const response = crypto
-          .createHmac("sha1", secret)
+          .createHmac('sha1', secret)
           .update(challenge)
-          .digest();
-        const pad = xor(response.subarray(0, 20), secret);
+          .digest()
+        const pad = xor(response.subarray(0, 20), secret)
         return {
-          challenge: challenge.toString("hex"),
-          pad: pad.toString("hex"),
-        };
+          challenge: challenge.toString('hex'),
+          pad: pad.toString('hex')
+        }
       },
       output: async () => {
-        return { secret };
-      },
-    };
-  };
+        return { secret }
+      }
+    }
+  }
 }
-module.exports.hmacsha1 = hmacsha1;
+module.exports.hmacsha1 = hmacsha1
 
 
 /***/ }),
@@ -99814,11 +99817,11 @@ module.exports.hmacsha1 = hmacsha1;
  *
  * @author Multifactor <support@multifactor.com>
  */
-const xor = __webpack_require__(7295);
-const speakeasy = __webpack_require__(6881);
+const xor = __webpack_require__(7295)
+const speakeasy = __webpack_require__(6881)
 
-function mod(n, m) {
-  return ((n % m) + m) % m;
+function mod (n, m) {
+  return ((n % m) + m) % m
 }
 
 /**
@@ -99844,48 +99847,48 @@ function mod(n, m) {
  * @since 0.12.0
  * @memberof derive.factors
  */
-function hotp(code) {
-  if (!Number.isInteger(code)) throw new TypeError("code must be an integer");
+function hotp (code) {
+  if (!Number.isInteger(code)) throw new TypeError('code must be an integer')
 
   return async (params) => {
-    const target = mod(params.offset + code, 10 ** params.digits);
-    const buffer = Buffer.allocUnsafe(4);
-    buffer.writeUInt32BE(target, 0);
+    const target = mod(params.offset + code, 10 ** params.digits)
+    const buffer = Buffer.allocUnsafe(4)
+    buffer.writeUInt32BE(target, 0)
 
     return {
-      type: "hotp",
+      type: 'hotp',
       data: buffer,
       params: async ({ key }) => {
-        const pad = Buffer.from(params.pad, "base64");
-        const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)));
+        const pad = Buffer.from(params.pad, 'base64')
+        const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
 
         const code = parseInt(
           speakeasy.hotp({
-            secret: secret.toString("hex"),
-            encoding: "hex",
+            secret: secret.toString('hex'),
+            encoding: 'hex',
             counter: params.counter + 1,
             algorithm: params.hash,
-            digits: params.digits,
+            digits: params.digits
           })
-        );
+        )
 
-        const offset = mod(target - code, 10 ** params.digits);
+        const offset = mod(target - code, 10 ** params.digits)
 
         return {
           hash: params.hash,
           digits: params.digits,
           pad: params.pad,
           counter: params.counter + 1,
-          offset,
-        };
+          offset
+        }
       },
       output: async () => {
-        return {};
-      },
-    };
-  };
+        return {}
+      }
+    }
+  }
 }
-module.exports.hotp = hotp;
+module.exports.hotp = hotp
 
 
 /***/ }),
@@ -100042,7 +100045,7 @@ module.exports.ooba = ooba
  *
  * @author Multifactor <support@multifactor.com>
  */
-const zxcvbn = __webpack_require__(1322);
+const zxcvbn = __webpack_require__(1322)
 
 /**
  * Derive an MFKDF password factor
@@ -100067,28 +100070,28 @@ const zxcvbn = __webpack_require__(1322);
  * @since 0.9.0
  * @memberof derive.factors
  */
-function password(password) {
-  if (typeof password !== "string") {
-    throw new TypeError("password must be a string");
+function password (password) {
+  if (typeof password !== 'string') {
+    throw new TypeError('password must be a string')
   }
-  if (password.length === 0) throw new RangeError("password cannot be empty");
+  if (password.length === 0) throw new RangeError('password cannot be empty')
 
-  const strength = zxcvbn(password);
+  const strength = zxcvbn(password)
 
   return async () => {
     return {
-      type: "password",
-      data: Buffer.from(password, "utf-8"),
+      type: 'password',
+      data: Buffer.from(password, 'utf-8'),
       params: async () => {
-        return {};
+        return {}
       },
       output: async () => {
-        return { strength };
-      },
-    };
-  };
+        return { strength }
+      }
+    }
+  }
 }
-module.exports.password = password;
+module.exports.password = password
 
 
 /***/ }),
@@ -100137,20 +100140,20 @@ module.exports.password = password;
  * @since 0.18.0
  * @memberof derive.factors
  */
-function persisted(share) {
-  if (!Buffer.isBuffer(share)) throw new TypeError("share must be a buffer");
+function persisted (share) {
+  if (!Buffer.isBuffer(share)) throw new TypeError('share must be a buffer')
 
   return async (params) => {
     return {
-      type: "persisted",
+      type: 'persisted',
       data: share,
       params: async () => {
-        return params;
-      },
-    };
-  };
+        return params
+      }
+    }
+  }
 }
-module.exports.persisted = persisted;
+module.exports.persisted = persisted
 
 
 /***/ }),
@@ -100168,7 +100171,7 @@ module.exports.persisted = persisted;
  *
  * @author Multifactor <support@multifactor.com>
  */
-const zxcvbn = __webpack_require__(1322);
+const zxcvbn = __webpack_require__(1322)
 
 /**
  * Derive an MFKDF Security Question factor
@@ -100193,32 +100196,32 @@ const zxcvbn = __webpack_require__(1322);
  * @since 1.0.0
  * @memberof derive.factors
  */
-function question(answer) {
-  if (typeof answer !== "string") {
-    throw new TypeError("answer must be a string");
+function question (answer) {
+  if (typeof answer !== 'string') {
+    throw new TypeError('answer must be a string')
   }
-  if (answer.length === 0) throw new RangeError("answer cannot be empty");
+  if (answer.length === 0) throw new RangeError('answer cannot be empty')
 
   answer = answer
     .toLowerCase()
-    .replace(/[^0-9a-z ]/gi, "")
-    .trim();
-  const strength = zxcvbn(answer);
+    .replace(/[^0-9a-z ]/gi, '')
+    .trim()
+  const strength = zxcvbn(answer)
 
   return async (params) => {
     return {
-      type: "question",
+      type: 'question',
       data: Buffer.from(answer),
       params: async () => {
-        return params;
+        return params
       },
       output: async () => {
-        return { strength };
-      },
-    };
-  };
+        return { strength }
+      }
+    }
+  }
 }
-module.exports.question = question;
+module.exports.question = question
 
 
 /***/ }),
@@ -100236,7 +100239,7 @@ module.exports.question = question;
  * @author Multifactor <support@multifactor.com>
  */
 
-const deriveKey = (__webpack_require__(2212).key);
+const deriveKey = (__webpack_require__(2212).key)
 
 /**
  * Derive an MFKDF stacked key factor
@@ -100266,23 +100269,23 @@ const deriveKey = (__webpack_require__(2212).key);
  * @since 0.15.0
  * @memberof derive.factors
  */
-function stack(factors) {
+function stack (factors) {
   return async (params) => {
-    const key = await deriveKey(params, factors);
+    const key = await deriveKey(params, factors)
 
     return {
-      type: "stack",
+      type: 'stack',
       data: key.key,
       params: async () => {
-        return key.policy;
+        return key.policy
       },
       output: async () => {
-        return key;
-      },
-    };
-  };
+        return key
+      }
+    }
+  }
 }
-module.exports.stack = stack;
+module.exports.stack = stack
 
 
 /***/ }),
@@ -100300,11 +100303,11 @@ module.exports.stack = stack;
  *
  * @author Multifactor <support@multifactor.com>
  */
-const xor = __webpack_require__(7295);
-const speakeasy = __webpack_require__(6881);
+const xor = __webpack_require__(7295)
+const speakeasy = __webpack_require__(6881)
 
-function mod(n, m) {
-  return ((n % m) + m) % m;
+function mod (n, m) {
+  return ((n % m) + m) % m
 }
 
 /**
@@ -100335,58 +100338,58 @@ function mod(n, m) {
  * @since 0.13.0
  * @memberof derive.factors
  */
-function totp(code, options = {}) {
-  if (!Number.isInteger(code)) throw new TypeError("code must be an integer");
-  if (typeof options.time === "undefined") options.time = Date.now();
+function totp (code, options = {}) {
+  if (!Number.isInteger(code)) throw new TypeError('code must be an integer')
+  if (typeof options.time === 'undefined') options.time = Date.now()
   if (!Number.isInteger(options.time)) {
-    throw new TypeError("time must be an integer");
+    throw new TypeError('time must be an integer')
   }
-  if (options.time <= 0) throw new RangeError("time must be positive");
+  if (options.time <= 0) throw new RangeError('time must be positive')
 
   return async (params) => {
-    const offsets = Buffer.from(params.offsets, "base64");
-    const startCounter = Math.floor(params.start / (params.step * 1000));
-    const nowCounter = Math.floor(options.time / (params.step * 1000));
+    const offsets = Buffer.from(params.offsets, 'base64')
+    const startCounter = Math.floor(params.start / (params.step * 1000))
+    const nowCounter = Math.floor(options.time / (params.step * 1000))
 
-    const index = nowCounter - startCounter;
+    const index = nowCounter - startCounter
 
-    if (index >= params.window) throw new RangeError("TOTP window exceeded");
+    if (index >= params.window) throw new RangeError('TOTP window exceeded')
 
-    const offset = offsets.readUInt32BE(4 * index);
+    const offset = offsets.readUInt32BE(4 * index)
 
-    const target = mod(offset + code, 10 ** params.digits);
-    const buffer = Buffer.allocUnsafe(4);
-    buffer.writeUInt32BE(target, 0);
+    const target = mod(offset + code, 10 ** params.digits)
+    const buffer = Buffer.allocUnsafe(4)
+    buffer.writeUInt32BE(target, 0)
 
     return {
-      type: "totp",
+      type: 'totp',
       data: buffer,
       params: async ({ key }) => {
-        const pad = Buffer.from(params.pad, "base64");
-        const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)));
+        const pad = Buffer.from(params.pad, 'base64')
+        const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
 
-        const time = options.time;
-        const newOffsets = Buffer.allocUnsafe(4 * params.window);
+        const time = options.time
+        const newOffsets = Buffer.allocUnsafe(4 * params.window)
 
-        offsets.copy(newOffsets, 0, 4 * index);
+        offsets.copy(newOffsets, 0, 4 * index)
 
         for (let i = params.window - index; i < params.window; i++) {
-          const counter = Math.floor(time / (params.step * 1000)) + i;
+          const counter = Math.floor(time / (params.step * 1000)) + i
 
           const code = parseInt(
             speakeasy.totp({
-              secret: secret.toString("hex"),
-              encoding: "hex",
+              secret: secret.toString('hex'),
+              encoding: 'hex',
               step: params.step,
               counter,
               algorithm: params.hash,
-              digits: params.digits,
+              digits: params.digits
             })
-          );
+          )
 
-          const offset = mod(target - code, 10 ** params.digits);
+          const offset = mod(target - code, 10 ** params.digits)
 
-          newOffsets.writeUInt32BE(offset, 4 * i);
+          newOffsets.writeUInt32BE(offset, 4 * i)
         }
 
         return {
@@ -100396,16 +100399,16 @@ function totp(code, options = {}) {
           step: params.step,
           window: params.window,
           pad: params.pad,
-          offsets: newOffsets.toString("base64"),
-        };
+          offsets: newOffsets.toString('base64')
+        }
       },
       output: async () => {
-        return {};
-      },
-    };
-  };
+        return {}
+      }
+    }
+  }
 }
-module.exports.totp = totp;
+module.exports.totp = totp
 
 
 /***/ }),
@@ -100423,7 +100426,7 @@ module.exports.totp = totp;
  *
  * @author Multifactor <support@multifactor.com>
  */
-const { validate: uuidValidate, parse: uuidParse } = __webpack_require__(1614);
+const { validate: uuidValidate, parse: uuidParse } = __webpack_require__(1614)
 
 /**
  * Derive an MFKDF UUID factor
@@ -100448,24 +100451,24 @@ const { validate: uuidValidate, parse: uuidParse } = __webpack_require__(1614);
  * @since 0.9.0
  * @memberof derive.factors
  */
-function uuid(uuid) {
-  if (typeof uuid !== "string") throw new TypeError("uuid must be a string");
-  if (!uuidValidate(uuid)) throw new TypeError("uuid is not a valid uuid");
+function uuid (uuid) {
+  if (typeof uuid !== 'string') throw new TypeError('uuid must be a string')
+  if (!uuidValidate(uuid)) throw new TypeError('uuid is not a valid uuid')
 
   return async () => {
     return {
-      type: "uuid",
+      type: 'uuid',
       data: Buffer.from(uuidParse(uuid)),
       params: async () => {
-        return {};
+        return {}
       },
       output: async () => {
-        return { uuid };
-      },
-    };
-  };
+        return { uuid }
+      }
+    }
+  }
 }
-module.exports.uuid = uuid;
+module.exports.uuid = uuid
 
 
 /***/ }),
@@ -100569,7 +100572,7 @@ async function key (policy, factors, options) {
 
         const pad = Buffer.from(factor.pad, 'base64')
         let stretched = Buffer.from(
-          await hkdf('sha512', material.data, '', '', 32)
+          await hkdf('sha256', material.data, factor.salt, '', 32)
         )
         if (Buffer.byteLength(pad) > 32) {
           stretched = Buffer.concat([
@@ -100843,28 +100846,28 @@ module.exports.kdf = kdf
  * @author Multifactor <support@multifactor.com>
  */
 
-const validate = (__webpack_require__(5970).validate);
-const evaluate = (__webpack_require__(6977).evaluate);
-const stack = (__webpack_require__(65).stack);
-const deriveKey = (__webpack_require__(2212).key);
+const validate = (__webpack_require__(5970).validate)
+const evaluate = (__webpack_require__(6977).evaluate)
+const stack = (__webpack_require__(65).stack)
+const deriveKey = (__webpack_require__(2212).key)
 
-function expand(policy, factors) {
-  const parsedFactors = {};
-  const ids = Object.keys(factors);
+function expand (policy, factors) {
+  const parsedFactors = {}
+  const ids = Object.keys(factors)
 
   for (const factor of policy.factors) {
-    if (factor.type === "stack") {
+    if (factor.type === 'stack') {
       if (evaluate(factor.params, ids)) {
-        parsedFactors[factor.id] = stack(expand(factor.params, factors));
+        parsedFactors[factor.id] = stack(expand(factor.params, factors))
       }
     } else {
       if (ids.includes(factor.id)) {
-        parsedFactors[factor.id] = factors[factor.id];
+        parsedFactors[factor.id] = factors[factor.id]
       }
     }
   }
 
-  return parsedFactors;
+  return parsedFactors
 }
 
 /**
@@ -100899,18 +100902,18 @@ function expand(policy, factors) {
  * @async
  * @memberOf policy
  */
-async function derive(policy, factors) {
-  const ids = Object.keys(factors);
-  if (!validate(policy)) throw new TypeError("policy contains duplicate ids");
+async function derive (policy, factors) {
+  const ids = Object.keys(factors)
+  if (!validate(policy)) throw new TypeError('policy contains duplicate ids')
   if (!evaluate(policy, ids)) {
-    throw new RangeError("insufficient factors to derive key");
+    throw new RangeError('insufficient factors to derive key')
   }
 
-  const expanded = expand(policy, factors);
+  const expanded = expand(policy, factors)
 
-  return await deriveKey(policy, expanded);
+  return await deriveKey(policy, expanded)
 }
-module.exports.derive = derive;
+module.exports.derive = derive
 
 
 /***/ }),
@@ -101005,8 +101008,8 @@ module.exports = {
  * @author Multifactor <support@multifactor.com>
  */
 
-const stack = (__webpack_require__(8720).stack);
-const { v4: uuidv4 } = __webpack_require__(1614);
+const stack = (__webpack_require__(8720).stack)
+const { v4: uuidv4 } = __webpack_require__(1614)
 
 /**
  * Create a MFKDF factor based on OR of two MFKDF factors
@@ -101040,10 +101043,10 @@ const { v4: uuidv4 } = __webpack_require__(1614);
  * @async
  * @memberOf policy
  */
-async function or(factor1, factor2) {
-  return await atLeast(1, [factor1, factor2]);
+async function or (factor1, factor2) {
+  return await atLeast(1, [factor1, factor2])
 }
-module.exports.or = or;
+module.exports.or = or
 
 /**
  * Create a MFKDF factor based on AND of two MFKDF factors
@@ -101077,10 +101080,10 @@ module.exports.or = or;
  * @async
  * @memberOf policy
  */
-async function and(factor1, factor2) {
-  return await atLeast(2, [factor1, factor2]);
+async function and (factor1, factor2) {
+  return await atLeast(2, [factor1, factor2])
 }
-module.exports.and = and;
+module.exports.and = and
 
 /**
  * Create a MFKDF factor based on ALL of the provided MFKDF factors
@@ -101112,10 +101115,10 @@ module.exports.and = and;
  * @async
  * @memberOf policy
  */
-async function all(factors) {
-  return await atLeast(factors.length, factors);
+async function all (factors) {
+  return await atLeast(factors.length, factors)
 }
-module.exports.all = all;
+module.exports.all = all
 
 /**
  * Create a MFKDF factor based on ANY of the provided MFKDF factors
@@ -101145,10 +101148,10 @@ module.exports.all = all;
  * @async
  * @memberOf policy
  */
-async function any(factors) {
-  return await atLeast(1, factors);
+async function any (factors) {
+  return await atLeast(1, factors)
 }
-module.exports.any = any;
+module.exports.any = any
 
 /**
  * Create a MFKDF factor based on at least some number of the provided MFKDF factors
@@ -101180,11 +101183,11 @@ module.exports.any = any;
  * @async
  * @memberOf policy
  */
-async function atLeast(n, factors) {
-  const id = uuidv4();
-  return await stack(factors, { threshold: n, id });
+async function atLeast (n, factors) {
+  const id = uuidv4()
+  return await stack(factors, { threshold: n, id })
 }
-module.exports.atLeast = atLeast;
+module.exports.atLeast = atLeast
 
 
 /***/ }),
@@ -101202,8 +101205,8 @@ module.exports.atLeast = atLeast;
  * @author Multifactor <support@multifactor.com>
  */
 
-const setupKey = (__webpack_require__(1209).key);
-const validate = (__webpack_require__(5970).validate);
+const setupKey = (__webpack_require__(1209).key)
+const validate = (__webpack_require__(5970).validate)
 
 /**
  * Validate and setup a policy-based multi-factor derived key
@@ -101250,14 +101253,14 @@ const validate = (__webpack_require__(5970).validate);
  * @since 0.16.0
  * @memberOf policy
  */
-async function setup(factor, options) {
-  const key = await setupKey([factor], options);
+async function setup (factor, options) {
+  const key = await setupKey([factor], options)
   if (!validate(key.policy)) {
-    throw new RangeError("policy contains duplicate ids");
+    throw new RangeError('policy contains duplicate ids')
   }
-  return key;
+  return key
 }
-module.exports.setup = setup;
+module.exports.setup = setup
 
 
 /***/ }),
@@ -101641,9 +101644,9 @@ module.exports.share = share
  *
  * @author Multifactor <support@multifactor.com>
  */
-const defaults = __webpack_require__(9930);
-const crypto = __webpack_require__(5835);
-const xor = __webpack_require__(7295);
+const defaults = __webpack_require__(9930)
+const crypto = __webpack_require__(5835)
+const xor = __webpack_require__(7295)
 
 /**
  * Setup a YubiKey-compatible MFKDF HMAC-SHA1 challenge-response factor
@@ -101676,47 +101679,47 @@ const xor = __webpack_require__(7295);
  * @async
  * @memberof setup.factors
  */
-async function hmacsha1(options) {
-  options = Object.assign(Object.assign({}, defaults.hmacsha1), options);
+async function hmacsha1 (options) {
+  options = Object.assign(Object.assign({}, defaults.hmacsha1), options)
 
-  if (typeof options.id !== "string") {
-    throw new TypeError("id must be a string");
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
   }
-  if (options.id.length === 0) throw new RangeError("id cannot be empty");
+  if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
-  if (typeof options.secret === "undefined") {
-    options.secret = crypto.randomBytes(20);
+  if (typeof options.secret === 'undefined') {
+    options.secret = crypto.randomBytes(20)
   }
   if (!Buffer.isBuffer(options.secret)) {
-    throw new TypeError("secret must be a buffer");
+    throw new TypeError('secret must be a buffer')
   }
   if (Buffer.byteLength(options.secret) !== 20) {
-    throw new RangeError("secret must be 20 bytes");
+    throw new RangeError('secret must be 20 bytes')
   }
 
   return {
-    type: "hmacsha1",
+    type: 'hmacsha1',
     id: options.id,
     data: options.secret,
     entropy: 160,
     params: async ({ key }) => {
-      const challenge = crypto.randomBytes(64);
+      const challenge = crypto.randomBytes(64)
       const response = crypto
-        .createHmac("sha1", options.secret)
+        .createHmac('sha1', options.secret)
         .update(challenge)
-        .digest();
-      const pad = xor(response.subarray(0, 20), options.secret);
+        .digest()
+      const pad = xor(response.subarray(0, 20), options.secret)
       return {
-        challenge: challenge.toString("hex"),
-        pad: pad.toString("hex"),
-      };
+        challenge: challenge.toString('hex'),
+        pad: pad.toString('hex')
+      }
     },
     output: async () => {
-      return { secret: options.secret };
-    },
-  };
+      return { secret: options.secret }
+    }
+  }
 }
-module.exports.hmacsha1 = hmacsha1;
+module.exports.hmacsha1 = hmacsha1
 
 
 /***/ }),
@@ -101734,14 +101737,14 @@ module.exports.hmacsha1 = hmacsha1;
  *
  * @author Multifactor <support@multifactor.com>
  */
-const defaults = __webpack_require__(9930);
-const crypto = __webpack_require__(5835);
-const xor = __webpack_require__(7295);
-const speakeasy = __webpack_require__(6881);
-const random = __webpack_require__(8382);
+const defaults = __webpack_require__(9930)
+const crypto = __webpack_require__(5835)
+const xor = __webpack_require__(7295)
+const speakeasy = __webpack_require__(6881)
+const random = __webpack_require__(8382)
 
-function mod(n, m) {
-  return ((n % m) + m) % m;
+function mod (n, m) {
+  return ((n % m) + m) % m
 }
 
 /**
@@ -101774,53 +101777,53 @@ function mod(n, m) {
  * @async
  * @memberof setup.factors
  */
-async function hotp(options) {
-  options = Object.assign(Object.assign({}, defaults.hotp), options);
+async function hotp (options) {
+  options = Object.assign(Object.assign({}, defaults.hotp), options)
 
-  if (typeof options.id !== "string") {
-    throw new TypeError("id must be a string");
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
   }
-  if (options.id.length === 0) throw new RangeError("id cannot be empty");
+  if (options.id.length === 0) throw new RangeError('id cannot be empty')
   if (!Number.isInteger(options.digits)) {
-    throw new TypeError("digits must be an interger");
+    throw new TypeError('digits must be an interger')
   }
-  if (options.digits < 6) throw new RangeError("digits must be at least 6");
-  if (options.digits > 8) throw new RangeError("digits must be at most 8");
-  if (!["sha1", "sha256", "sha512"].includes(options.hash)) {
-    throw new RangeError("unrecognized hash function");
+  if (options.digits < 6) throw new RangeError('digits must be at least 6')
+  if (options.digits > 8) throw new RangeError('digits must be at most 8')
+  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) {
+    throw new RangeError('unrecognized hash function')
   }
   if (
     !Buffer.isBuffer(options.secret) &&
-    typeof options.secret !== "undefined"
+    typeof options.secret !== 'undefined'
   ) {
-    throw new TypeError("secret must be a buffer");
+    throw new TypeError('secret must be a buffer')
   }
 
-  const target = await random(0, 10 ** options.digits - 1);
-  const buffer = Buffer.allocUnsafe(4);
-  buffer.writeUInt32BE(target, 0);
+  const target = await random(0, 10 ** options.digits - 1)
+  const buffer = Buffer.allocUnsafe(4)
+  buffer.writeUInt32BE(target, 0)
 
   return {
-    type: "hotp",
+    type: 'hotp',
     id: options.id,
     data: buffer,
     entropy: Math.log2(10 ** options.digits),
     params: async ({ key }) => {
-      if (typeof options.secret === "undefined") {
-        options.secret = crypto.randomBytes(Buffer.byteLength(key));
+      if (typeof options.secret === 'undefined') {
+        options.secret = crypto.randomBytes(Buffer.byteLength(key))
       }
 
       const code = parseInt(
         speakeasy.hotp({
-          secret: options.secret.toString("hex"),
-          encoding: "hex",
+          secret: options.secret.toString('hex'),
+          encoding: 'hex',
           counter: 1,
           algorithm: options.hash,
-          digits: options.digits,
+          digits: options.digits
         })
-      );
+      )
 
-      const offset = mod(target - code, 10 ** options.digits);
+      const offset = mod(target - code, 10 ** options.digits)
 
       return {
         hash: options.hash,
@@ -101828,15 +101831,15 @@ async function hotp(options) {
         pad: xor(
           options.secret,
           key.slice(0, Buffer.byteLength(options.secret))
-        ).toString("base64"),
+        ).toString('base64'),
         counter: 1,
-        offset,
-      };
+        offset
+      }
     },
     output: async () => {
       return {
-        scheme: "otpauth",
-        type: "hotp",
+        scheme: 'otpauth',
+        type: 'hotp',
         label: options.label,
         secret: options.secret,
         issuer: options.issuer,
@@ -101844,20 +101847,20 @@ async function hotp(options) {
         digits: options.digits,
         counter: 1,
         uri: speakeasy.otpauthURL({
-          secret: options.secret.toString("hex"),
-          encoding: "hex",
+          secret: options.secret.toString('hex'),
+          encoding: 'hex',
           label: options.label,
-          type: "hotp",
+          type: 'hotp',
           counter: 1,
           issuer: options.issuer,
           algorithm: options.hash,
-          digits: options.digits,
-        }),
-      };
-    },
-  };
+          digits: options.digits
+        })
+      }
+    }
+  }
 }
-module.exports.hotp = hotp;
+module.exports.hotp = hotp
 
 
 /***/ }),
@@ -102020,8 +102023,8 @@ module.exports.ooba = ooba
  *
  * @author Multifactor <support@multifactor.com>
  */
-const defaults = __webpack_require__(9930);
-const zxcvbn = __webpack_require__(1322);
+const defaults = __webpack_require__(9930)
+const zxcvbn = __webpack_require__(1322)
 
 /**
  * Setup an MFKDF password factor
@@ -102049,35 +102052,35 @@ const zxcvbn = __webpack_require__(1322);
  * @async
  * @memberof setup.factors
  */
-async function password(password, options) {
-  if (typeof password !== "string") {
-    throw new TypeError("password must be a string");
+async function password (password, options) {
+  if (typeof password !== 'string') {
+    throw new TypeError('password must be a string')
   }
-  if (password.length === 0) throw new RangeError("password cannot be empty");
+  if (password.length === 0) throw new RangeError('password cannot be empty')
 
-  options = Object.assign(Object.assign({}, defaults.password), options);
+  options = Object.assign(Object.assign({}, defaults.password), options)
 
-  if (typeof options.id !== "string") {
-    throw new TypeError("id must be a string");
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
   }
-  if (options.id.length === 0) throw new RangeError("id cannot be empty");
+  if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
-  const strength = zxcvbn(password);
+  const strength = zxcvbn(password)
 
   return {
-    type: "password",
+    type: 'password',
     id: options.id,
     entropy: Math.log2(strength.guesses),
-    data: Buffer.from(password, "utf-8"),
+    data: Buffer.from(password, 'utf-8'),
     params: async () => {
-      return {};
+      return {}
     },
     output: async () => {
-      return { strength };
-    },
-  };
+      return { strength }
+    }
+  }
 }
-module.exports.password = password;
+module.exports.password = password
 
 
 /***/ }),
@@ -102095,8 +102098,8 @@ module.exports.password = password;
  *
  * @author Multifactor <support@multifactor.com>
  */
-const defaults = __webpack_require__(9930);
-const zxcvbn = __webpack_require__(1322);
+const defaults = __webpack_require__(9930)
+const zxcvbn = __webpack_require__(1322)
 
 /**
  * Setup an MFKDF Security Question factor
@@ -102125,43 +102128,43 @@ const zxcvbn = __webpack_require__(1322);
  * @async
  * @memberof setup.factors
  */
-async function question(answer, options) {
-  options = Object.assign(Object.assign({}, defaults.question), options);
-  if (typeof answer !== "string") {
-    throw new TypeError("answer must be a string");
+async function question (answer, options) {
+  options = Object.assign(Object.assign({}, defaults.question), options)
+  if (typeof answer !== 'string') {
+    throw new TypeError('answer must be a string')
   }
-  if (answer.length === 0) throw new RangeError("answer cannot be empty");
+  if (answer.length === 0) throw new RangeError('answer cannot be empty')
 
-  if (typeof options.id !== "string") {
-    throw new TypeError("id must be a string");
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
   }
-  if (options.id.length === 0) throw new RangeError("id cannot be empty");
+  if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
-  if (typeof options.question === "undefined") options.question = "";
-  if (typeof options.question !== "string") {
-    throw new TypeError("question must be a string");
+  if (typeof options.question === 'undefined') options.question = ''
+  if (typeof options.question !== 'string') {
+    throw new TypeError('question must be a string')
   }
 
   answer = answer
     .toLowerCase()
-    .replace(/[^0-9a-z ]/gi, "")
-    .trim();
-  const strength = zxcvbn(answer);
+    .replace(/[^0-9a-z ]/gi, '')
+    .trim()
+  const strength = zxcvbn(answer)
 
   return {
-    type: "question",
+    type: 'question',
     id: options.id,
     entropy: Math.log2(strength.guesses),
     data: Buffer.from(answer),
     params: async () => {
-      return { question: options.question };
+      return { question: options.question }
     },
     output: async () => {
-      return { strength };
-    },
-  };
+      return { strength }
+    }
+  }
 }
-module.exports.question = question;
+module.exports.question = question
 
 
 /***/ }),
@@ -102265,14 +102268,14 @@ module.exports.stack = stack
  *
  * @author Multifactor <support@multifactor.com>
  */
-const defaults = __webpack_require__(9930);
-const crypto = __webpack_require__(5835);
-const xor = __webpack_require__(7295);
-const speakeasy = __webpack_require__(6881);
-const random = __webpack_require__(8382);
+const defaults = __webpack_require__(9930)
+const crypto = __webpack_require__(5835)
+const xor = __webpack_require__(7295)
+const speakeasy = __webpack_require__(6881)
+const random = __webpack_require__(8382)
 
-function mod(n, m) {
-  return ((n % m) + m) % m;
+function mod (n, m) {
+  return ((n % m) + m) % m
 }
 
 /**
@@ -102311,75 +102314,75 @@ function mod(n, m) {
  * @async
  * @memberof setup.factors
  */
-async function totp(options) {
-  options = Object.assign(Object.assign({}, defaults.totp), options);
+async function totp (options) {
+  options = Object.assign(Object.assign({}, defaults.totp), options)
 
-  if (typeof options.id !== "string") {
-    throw new TypeError("id must be a string");
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
   }
-  if (options.id.length === 0) throw new RangeError("id cannot be empty");
+  if (options.id.length === 0) throw new RangeError('id cannot be empty')
   if (!Number.isInteger(options.digits)) {
-    throw new TypeError("digits must be an interger");
+    throw new TypeError('digits must be an interger')
   }
-  if (options.digits < 6) throw new RangeError("digits must be at least 6");
-  if (options.digits > 8) throw new RangeError("digits must be at most 8");
+  if (options.digits < 6) throw new RangeError('digits must be at least 6')
+  if (options.digits > 8) throw new RangeError('digits must be at most 8')
   if (!Number.isInteger(options.step)) {
-    throw new TypeError("step must be an interger");
+    throw new TypeError('step must be an interger')
   }
-  if (options.step < 0) throw new RangeError("step must be positive");
+  if (options.step < 0) throw new RangeError('step must be positive')
   if (!Number.isInteger(options.window)) {
-    throw new TypeError("window must be an interger");
+    throw new TypeError('window must be an interger')
   }
-  if (options.window < 0) throw new RangeError("window must be positive");
-  if (!["sha1", "sha256", "sha512"].includes(options.hash)) {
-    throw new RangeError("unrecognized hash function");
+  if (options.window < 0) throw new RangeError('window must be positive')
+  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) {
+    throw new RangeError('unrecognized hash function')
   }
   if (
     !Buffer.isBuffer(options.secret) &&
-    typeof options.secret !== "undefined"
+    typeof options.secret !== 'undefined'
   ) {
-    throw new TypeError("secret must be a buffer");
+    throw new TypeError('secret must be a buffer')
   }
-  if (typeof options.time === "undefined") options.time = Date.now();
+  if (typeof options.time === 'undefined') options.time = Date.now()
   if (!Number.isInteger(options.time)) {
-    throw new TypeError("time must be an integer");
+    throw new TypeError('time must be an integer')
   }
-  if (options.time <= 0) throw new RangeError("time must be positive");
+  if (options.time <= 0) throw new RangeError('time must be positive')
 
-  const target = await random(0, 10 ** options.digits - 1);
-  const buffer = Buffer.allocUnsafe(4);
-  buffer.writeUInt32BE(target, 0);
+  const target = await random(0, 10 ** options.digits - 1)
+  const buffer = Buffer.allocUnsafe(4)
+  buffer.writeUInt32BE(target, 0)
 
   return {
-    type: "totp",
+    type: 'totp',
     id: options.id,
     data: buffer,
     entropy: Math.log2(10 ** options.digits),
     params: async ({ key }) => {
-      if (typeof options.secret === "undefined") {
-        options.secret = crypto.randomBytes(Buffer.byteLength(key));
+      if (typeof options.secret === 'undefined') {
+        options.secret = crypto.randomBytes(Buffer.byteLength(key))
       }
 
-      const time = options.time;
-      const offsets = Buffer.allocUnsafe(4 * options.window);
+      const time = options.time
+      const offsets = Buffer.allocUnsafe(4 * options.window)
 
       for (let i = 0; i < options.window; i++) {
-        const counter = Math.floor(time / (options.step * 1000)) + i;
+        const counter = Math.floor(time / (options.step * 1000)) + i
 
         const code = parseInt(
           speakeasy.totp({
-            secret: options.secret.toString("hex"),
-            encoding: "hex",
+            secret: options.secret.toString('hex'),
+            encoding: 'hex',
             step: options.step,
             counter,
             algorithm: options.hash,
-            digits: options.digits,
+            digits: options.digits
           })
-        );
+        )
 
-        const offset = mod(target - code, 10 ** options.digits);
+        const offset = mod(target - code, 10 ** options.digits)
 
-        offsets.writeUInt32BE(offset, 4 * i);
+        offsets.writeUInt32BE(offset, 4 * i)
       }
 
       return {
@@ -102391,14 +102394,14 @@ async function totp(options) {
         pad: xor(
           options.secret,
           key.slice(0, Buffer.byteLength(options.secret))
-        ).toString("base64"),
-        offsets: offsets.toString("base64"),
-      };
+        ).toString('base64'),
+        offsets: offsets.toString('base64')
+      }
     },
     output: async () => {
       return {
-        scheme: "otpauth",
-        type: "totp",
+        scheme: 'otpauth',
+        type: 'totp',
         label: options.label,
         secret: options.secret,
         issuer: options.issuer,
@@ -102406,20 +102409,20 @@ async function totp(options) {
         digits: options.digits,
         period: options.step,
         uri: speakeasy.otpauthURL({
-          secret: options.secret.toString("hex"),
-          encoding: "hex",
+          secret: options.secret.toString('hex'),
+          encoding: 'hex',
           label: options.label,
-          type: "totp",
+          type: 'totp',
           issuer: options.issuer,
           algorithm: options.hash,
           digits: options.digits,
-          period: options.step,
-        }),
-      };
-    },
-  };
+          period: options.step
+        })
+      }
+    }
+  }
 }
-module.exports.totp = totp;
+module.exports.totp = totp
 
 
 /***/ }),
@@ -102437,12 +102440,12 @@ module.exports.totp = totp;
  *
  * @author Multifactor <support@multifactor.com>
  */
-const defaults = __webpack_require__(9930);
+const defaults = __webpack_require__(9930)
 const {
   v4: uuidv4,
   validate: uuidValidate,
-  parse: uuidParse,
-} = __webpack_require__(1614);
+  parse: uuidParse
+} = __webpack_require__(1614)
 
 /**
  * Setup an MFKDF UUID factor
@@ -102470,36 +102473,36 @@ const {
  * @async
  * @memberof setup.factors
  */
-async function uuid(options) {
-  options = Object.assign(Object.assign({}, defaults.uuid), options);
+async function uuid (options) {
+  options = Object.assign(Object.assign({}, defaults.uuid), options)
 
-  if (typeof options.id !== "string") {
-    throw new TypeError("id must be a string");
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
   }
-  if (options.id.length === 0) throw new RangeError("id cannot be empty");
+  if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
-  if (typeof options.uuid === "undefined") options.uuid = uuidv4();
-  if (typeof options.uuid !== "string") {
-    throw new TypeError("uuid must be a string");
+  if (typeof options.uuid === 'undefined') options.uuid = uuidv4()
+  if (typeof options.uuid !== 'string') {
+    throw new TypeError('uuid must be a string')
   }
   if (!uuidValidate(options.uuid)) {
-    throw new TypeError("uuid is not a valid uuid");
+    throw new TypeError('uuid is not a valid uuid')
   }
 
   return {
-    type: "uuid",
+    type: 'uuid',
     id: options.id,
     entropy: 122,
     data: Buffer.from(uuidParse(options.uuid)),
     params: async () => {
-      return {};
+      return {}
     },
     output: async () => {
-      return { uuid: options.uuid };
-    },
-  };
+      return { uuid: options.uuid }
+    }
+  }
 }
-module.exports.uuid = uuid;
+module.exports.uuid = uuid
 
 
 /***/ }),
@@ -102534,7 +102537,7 @@ module.exports = {
  * @author Multifactor <support@multifactor.com>
  */
 
-const defaults = __webpack_require__(9930);
+const defaults = __webpack_require__(9930)
 
 /**
  * Validate and setup a KDF configuration for a multi-factor derived key
@@ -102568,124 +102571,124 @@ const defaults = __webpack_require__(9930);
  * @since 0.7.0
  * @memberOf setup
  */
-function kdf(options) {
-  options = Object.assign(Object.assign({}, defaults.kdf), options);
-  if (typeof options.kdf !== "string") {
-    throw new TypeError("kdf must be a string");
+function kdf (options) {
+  options = Object.assign(Object.assign({}, defaults.kdf), options)
+  if (typeof options.kdf !== 'string') {
+    throw new TypeError('kdf must be a string')
   }
   const config = {
     type: options.kdf,
-    params: {},
-  };
+    params: {}
+  }
 
-  if (options.kdf === "hkdf") {
+  if (options.kdf === 'hkdf') {
     // hdkf digest
-    if (typeof options.hkdfdigest !== "string") {
-      throw new TypeError("hkdfdigest must be a string");
+    if (typeof options.hkdfdigest !== 'string') {
+      throw new TypeError('hkdfdigest must be a string')
     }
-    if (!["sha1", "sha256", "sha384", "sha512"].includes(options.hkdfdigest)) {
+    if (!['sha1', 'sha256', 'sha384', 'sha512'].includes(options.hkdfdigest)) {
       throw new RangeError(
-        "hkdfdigest must be one of sha1, sha256, sha384, or sha512"
-      );
+        'hkdfdigest must be one of sha1, sha256, sha384, or sha512'
+      )
     }
-    config.params.digest = options.hkdfdigest;
-  } else if (options.kdf === "pbkdf2") {
+    config.params.digest = options.hkdfdigest
+  } else if (options.kdf === 'pbkdf2') {
     // pbkdf2 rounds
     if (!Number.isInteger(options.pbkdf2rounds)) {
-      throw new TypeError("pbkdf2rounds must be an integer");
+      throw new TypeError('pbkdf2rounds must be an integer')
     }
     if (!(options.pbkdf2rounds > 0)) {
-      throw new RangeError("pbkdf2rounds must be positive");
+      throw new RangeError('pbkdf2rounds must be positive')
     }
-    config.params.rounds = options.pbkdf2rounds;
+    config.params.rounds = options.pbkdf2rounds
 
     // pbkdf2 digest
-    if (typeof options.pbkdf2digest !== "string") {
-      throw new TypeError("pbkdf2digest must be a string");
+    if (typeof options.pbkdf2digest !== 'string') {
+      throw new TypeError('pbkdf2digest must be a string')
     }
     if (
-      !["sha1", "sha256", "sha384", "sha512"].includes(options.pbkdf2digest)
+      !['sha1', 'sha256', 'sha384', 'sha512'].includes(options.pbkdf2digest)
     ) {
       throw new RangeError(
-        "pbkdf2digest must be one of sha1, sha256, sha384, or sha512"
-      );
+        'pbkdf2digest must be one of sha1, sha256, sha384, or sha512'
+      )
     }
-    config.params.digest = options.pbkdf2digest;
-  } else if (options.kdf === "bcrypt") {
+    config.params.digest = options.pbkdf2digest
+  } else if (options.kdf === 'bcrypt') {
     // bcrypt rounds
     if (!Number.isInteger(options.bcryptrounds)) {
-      throw new TypeError("bcryptrounds must be an integer");
+      throw new TypeError('bcryptrounds must be an integer')
     }
     if (!(options.bcryptrounds > 0)) {
-      throw new RangeError("bcryptrounds must be positive");
+      throw new RangeError('bcryptrounds must be positive')
     }
-    config.params.rounds = options.bcryptrounds;
-  } else if (options.kdf === "scrypt") {
+    config.params.rounds = options.bcryptrounds
+  } else if (options.kdf === 'scrypt') {
     // scrypt rounds
     if (!Number.isInteger(options.scryptcost)) {
-      throw new TypeError("scryptcost must be a positive integer");
+      throw new TypeError('scryptcost must be a positive integer')
     }
     if (!(options.scryptcost > 0)) {
-      throw new RangeError("scryptcost must be positive");
+      throw new RangeError('scryptcost must be positive')
     }
-    config.params.rounds = options.scryptcost;
+    config.params.rounds = options.scryptcost
 
     // scrypt block size
     if (!Number.isInteger(options.scryptblocksize)) {
-      throw new TypeError("scryptblocksize must be an integer");
+      throw new TypeError('scryptblocksize must be an integer')
     }
     if (!(options.scryptblocksize > 0)) {
-      throw new RangeError("scryptblocksize must be positive");
+      throw new RangeError('scryptblocksize must be positive')
     }
-    config.params.blocksize = options.scryptblocksize;
+    config.params.blocksize = options.scryptblocksize
 
     // scrypt parallelism
     if (!Number.isInteger(options.scryptparallelism)) {
-      throw new TypeError("scryptparallelism must be an integer");
+      throw new TypeError('scryptparallelism must be an integer')
     }
     if (!(options.scryptparallelism > 0)) {
-      throw new RangeError("scryptparallelism must be positive");
+      throw new RangeError('scryptparallelism must be positive')
     }
-    config.params.parallelism = options.scryptparallelism;
+    config.params.parallelism = options.scryptparallelism
   } else if (
-    options.kdf === "argon2i" ||
-    options.kdf === "argon2d" ||
-    options.kdf === "argon2id"
+    options.kdf === 'argon2i' ||
+    options.kdf === 'argon2d' ||
+    options.kdf === 'argon2id'
   ) {
     // argon2 rounds
     if (!Number.isInteger(options.argon2time)) {
-      throw new TypeError("argon2time must be an integer");
+      throw new TypeError('argon2time must be an integer')
     }
     if (!(options.argon2time > 0)) {
-      throw new RangeError("argon2time must be positive");
+      throw new RangeError('argon2time must be positive')
     }
-    config.params.rounds = options.argon2time;
+    config.params.rounds = options.argon2time
 
     // argon2 memory
     if (!Number.isInteger(options.argon2mem)) {
-      throw new TypeError("argon2mem must be an integer");
+      throw new TypeError('argon2mem must be an integer')
     }
     if (!(options.argon2mem > 0)) {
-      throw new RangeError("argon2mem must be positive");
+      throw new RangeError('argon2mem must be positive')
     }
-    config.params.memory = options.argon2mem;
+    config.params.memory = options.argon2mem
 
     // argon2 parallelism
     if (!Number.isInteger(options.argon2parallelism)) {
-      throw new TypeError("argon2parallelism must be an integer");
+      throw new TypeError('argon2parallelism must be an integer')
     }
     if (!(options.argon2parallelism > 0)) {
-      throw new RangeError("argon2parallelism must be positive");
+      throw new RangeError('argon2parallelism must be positive')
     }
-    config.params.parallelism = options.argon2parallelism;
+    config.params.parallelism = options.argon2parallelism
   } else {
     throw new RangeError(
-      "kdf must be one of pbkdf2, bcrypt, scrypt, argon2i, argon2d, or argon2id"
-    );
+      'kdf must be one of pbkdf2, bcrypt, scrypt, argon2i, argon2d, or argon2id'
+    )
   }
-  return config;
+  return config
 }
-module.exports.kdf = kdf;
+module.exports.kdf = kdf
 
 
 /***/ }),
@@ -102857,7 +102860,10 @@ async function key (factors, options) {
     theoreticalEntropy.push(factor.data.byteLength * 8)
     realEntropy.push(factor.entropy)
 
-    let stretched = Buffer.from(await hkdf('sha512', factor.data, '', '', 32))
+    const salt = crypto.randomBytes(32).toString('base64')
+    let stretched = Buffer.from(
+      await hkdf('sha256', factor.data, salt, '', 32)
+    )
     if (Buffer.byteLength(share) > 32) {
       stretched = Buffer.concat([
         Buffer.alloc(Buffer.byteLength(share) - 32),
@@ -102872,7 +102878,8 @@ async function key (factors, options) {
       id: factor.id,
       type: factor.type,
       pad: pad.toString('base64'),
-      params
+      params,
+      salt
     })
   }
 
@@ -103352,7 +103359,7 @@ module.exports = JSON.parse('{"2.16.840.1.101.3.4.1.1":"aes-128-ecb","2.16.840.1
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"$schema":"http://json-schema.org/draft-07/schema","$id":"https://mfkdf.com/schema/v2.0.0/policy.json","type":"object","title":"Multi-Factor Derived Key Policy Schema","description":"A multi-factor derived key policy defines the factors and methods used to derive a key via multi-factor key derivation.","required":["threshold","salt","factors","$id","$schema"],"properties":{"$schema":{"type":"string","title":"Key Schema","description":"Link to the version of the schema that can validate the key policy."},"$id":{"type":"string","title":"Key ID","description":"String which uniquely identifies this key."},"threshold":{"type":"integer","title":"Factor Threshold","description":"The number of correct factors needed to derive this key."},"salt":{"type":"string","title":"KDF Salt","description":"Base-64 encoded salt value used as additional input to the KDF."},"factors":{"type":"array","title":"Factors","description":"Factors which can be used to derive this key.","items":{"type":"object","title":"Factor","description":"Factor which can be used to derive this key.","required":["id","type","pad","params"],"properties":{"id":{"type":"string","title":"Factor ID","description":"String which uniquely identifies this factor."},"type":{"type":"string","title":"Factor Type","description":"Name of the factor material function to use."},"pad":{"type":"string","title":"Factor Pad","description":"Base-64 encoded intermediate value to combine with factor material."},"params":{"type":"object","title":"Factor Parameters","description":"Parameters required by chosen factor material function.","required":[]}}}},"secrets":{"type":"array","title":"Secrets","description":"Enveloped secrets encrypted with this key.","items":{"type":"object","title":"Factor","description":"Enveloped secret encrypted with this key.","required":["id","type","value"],"properties":{"id":{"type":"string","title":"Secret ID","description":"String which uniquely identifies this enveloped secret."},"type":{"type":"string","title":"Secret Type","description":"Type of enveloped secret."},"value":{"type":"string","title":"Secret Value","description":"Base-64 encoded ciphertext value encrypted with this key."}}}}}}');
+module.exports = JSON.parse('{"$schema":"http://json-schema.org/draft-07/schema","$id":"https://mfkdf.com/schema/v2.0.0/policy.json","type":"object","title":"Multi-Factor Derived Key Policy Schema","description":"A multi-factor derived key policy defines the factors and methods used to derive a key via multi-factor key derivation.","required":["threshold","salt","factors","$id","$schema"],"properties":{"$schema":{"type":"string","title":"Key Schema","description":"Link to the version of the schema that can validate the key policy."},"$id":{"type":"string","title":"Key ID","description":"String which uniquely identifies this key."},"threshold":{"type":"integer","title":"Factor Threshold","description":"The number of correct factors needed to derive this key."},"salt":{"type":"string","title":"KDF Salt","description":"Base-64 encoded salt value used as additional input to the KDF."},"factors":{"type":"array","title":"Factors","description":"Factors which can be used to derive this key.","items":{"type":"object","title":"Factor","description":"Factor which can be used to derive this key.","required":["id","type","pad","salt","params"],"properties":{"id":{"type":"string","title":"Factor ID","description":"String which uniquely identifies this factor."},"type":{"type":"string","title":"Factor Type","description":"Name of the factor material function to use."},"pad":{"type":"string","title":"Factor Pad","description":"Base-64 encoded intermediate value to combine with factor material."},"salt":{"type":"string","title":"Factor Salt","description":"Base-64 encoded intermediate value to combine with factor material."},"params":{"type":"object","title":"Factor Parameters","description":"Parameters required by chosen factor material function.","required":[]}}}},"secrets":{"type":"array","title":"Secrets","description":"Enveloped secrets encrypted with this key.","items":{"type":"object","title":"Factor","description":"Enveloped secret encrypted with this key.","required":["id","type","value"],"properties":{"id":{"type":"string","title":"Secret ID","description":"String which uniquely identifies this enveloped secret."},"type":{"type":"string","title":"Secret Type","description":"Type of enveloped secret."},"value":{"type":"string","title":"Secret Value","description":"Base-64 encoded ciphertext value encrypted with this key."}}}}}}');
 
 /***/ })
 

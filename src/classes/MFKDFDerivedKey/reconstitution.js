@@ -11,6 +11,7 @@
 const { hkdf } = require('@panva/hkdf')
 const xor = require('buffer-xor')
 const share = require('../../secrets/share').share
+const crypto = require('crypto')
 
 /**
  * Change the threshold of factors needed to derive a multi-factor derived key
@@ -406,9 +407,10 @@ async function reconstitute (
 
   for (const [index, factor] of Object.values(factors).entries()) {
     const share = shares[index]
+    const salt = crypto.randomBytes(32).toString('base64')
     let stretched = Buffer.isBuffer(material[factor.id])
       ? material[factor.id]
-      : Buffer.from(await hkdf('sha512', data[factor.id], '', '', 32))
+      : Buffer.from(await hkdf('sha256', data[factor.id], salt, '', 32))
 
     if (Buffer.byteLength(share) > 32) {
       stretched = Buffer.concat([
@@ -418,6 +420,7 @@ async function reconstitute (
     }
 
     factor.pad = xor(share, stretched).toString('base64')
+    factor.salt = factor.salt ? factor.salt : salt
     newFactors.push(factor)
   }
 

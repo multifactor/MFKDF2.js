@@ -34,7 +34,7 @@
         "type": "object",
         "title": "Factor",
         "description": "Factor which can be used to derive this key.",
-        "required": ["id", "type", "pad", "params"],
+        "required": ["id", "type", "pad", "salt", "params"],
         "properties": {
           "id": {
             "type": "string",
@@ -49,6 +49,11 @@
           "pad": {
             "type": "string",
             "title": "Factor Pad",
+            "description": "Base-64 encoded intermediate value to combine with factor material."
+          },
+          "salt": {
+            "type": "string",
+            "title": "Factor Salt",
             "description": "Base-64 encoded intermediate value to combine with factor material."
           },
           "params": {

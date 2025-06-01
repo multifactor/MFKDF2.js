@@ -77,7 +77,7 @@ async function key (policy, factors, options) {
 
         const pad = Buffer.from(factor.pad, 'base64')
         let stretched = Buffer.from(
-          await hkdf('sha512', material.data, '', '', 32)
+          await hkdf('sha256', material.data, factor.salt, '', 32)
         )
         if (Buffer.byteLength(pad) > 32) {
           stretched = Buffer.concat([

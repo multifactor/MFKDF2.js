@@ -58,7 +58,7 @@ suite('factors/hmacsha1', () => {
 
   test('static', async () => {
     const setup =
-      '{"$schema":"https://mfkdf.com/schema/v2.0.0/policy.json","$id":"8b6874f7-5dbb-4196-bc89-347cd6b02dc6","size":32,"threshold":1,"salt":"nhh2/3AwOf2r2n7uRONoM697IjEKsHfAeyo8NxF1G94=","kdf":{"type":"argon2id","params":{"rounds":2,"memory":24576,"parallelism":1}},"factors":[{"id":"hmacsha1","type":"hmacsha1","pad":"PsS1B6fPovsuMfKZinw6hn0kTw1VEpoM8jRFR/8SyT0=","params":{"challenge":"5a5f71c3a584b797d3c8f7d0f59653a2234781b06f2540df42946aa380f634a3430e6aad294e392543cc4ecd3da039bfa8041b179d14afd360a104e3354f01dd","pad":"f8d33204be0436f2629d5173e9bd3fc1953cf982"}}]}'
+      '{"$schema":"https://mfkdf.com/schema/v2.0.0/policy.json","$id":"8b6874f7-5dbb-4196-bc89-347cd6b02dc6","size":32,"threshold":1,"salt":"nhh2/3AwOf2r2n7uRONoM697IjEKsHfAeyo8NxF1G94=","kdf":{"type":"argon2id","params":{"rounds":2,"memory":24576,"parallelism":1}},"factors":[{"id":"hmacsha1","type":"hmacsha1","pad":"PsS1B6fPovsuMfKZinw6hn0kTw1VEpoM8jRFR/8SyT0=","salt":"PsS1B6fPovsuMfKZinw6hn0kTw1VEpoM8jRFR/8SyT0=","params":{"challenge":"5a5f71c3a584b797d3c8f7d0f59653a2234781b06f2540df42946aa380f634a3430e6aad294e392543cc4ecd3da039bfa8041b179d14afd360a104e3354f01dd","pad":"f8d33204be0436f2629d5173e9bd3fc1953cf982"}}]}'
 
     const derive = await mfkdf.derive.key(JSON.parse(setup), {
       hmacsha1: mfkdf.derive.factors.hmacsha1(
@@ -69,7 +69,7 @@ suite('factors/hmacsha1', () => {
     derive.key
       .toString('hex')
       .should.equal(
-        'ca76d2b456be4e40ba6ef65a68fbfc71bf27a0ca3e0fa4481a2ddf29fb6b65d9'
+        '259608bfde29f339cb07c0cebc8f49f412a6ab0e85cc305261c5f8e01a62fad5'
       )
   })
 
