@@ -16,6 +16,7 @@ const kdf = require('../kdf').kdf
 const { hkdf } = require('@panva/hkdf')
 const xor = require('buffer-xor')
 const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
+const kdfSetup = require('../setup/kdf').kdf
 
 /**
  * Derive a key from multiple factors of input
@@ -39,13 +40,16 @@ const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
  *
  * @param {Object} policy - The key policy for the key being derived
  * @param {Object.<string, MFKDFFactor>} factors - Factors used to derive this key
+ * @param {Object} [options] - Configuration options
+ * @param {number} [options.time=2] - Argon2id iterations to use (minimum 2)
+ * @param {number} [options.memory=24576] - Argon2id memory to use (minimum 24576)
  * @returns {MFKDFDerivedKey} A multi-factor derived key object
  * @author Multifactor <support@multifactor.com>
  * @since 0.9.0
  * @async
  * @memberOf derive
  */
-async function key (policy, factors) {
+async function key (policy, factors, options) {
   const ajv = new Ajv()
   const valid = ajv.validate(policySchema, policy)
   if (!valid) throw new TypeError('invalid key policy: ' + ajv.errorsText())
@@ -98,12 +102,22 @@ async function key (policy, factors) {
     throw new RangeError('insufficient factors provided to derive key')
   }
 
+  // kdf
+  const kdfSettings = kdfSetup({
+    kdf: 'argon2id',
+    argon2time: Math.max(2, options && options.time ? options.time : 2),
+    argon2mem: Math.max(
+      24576,
+      options && options.memory ? options.memory : 24576
+    )
+  })
+
   const secret = combine(shares, policy.threshold, policy.factors.length)
   const key = await kdf(
     secret,
     Buffer.from(policy.salt, 'base64'),
     32,
-    policy.kdf
+    kdfSettings
   )
 
   const newPolicy = JSON.parse(JSON.stringify(policy))

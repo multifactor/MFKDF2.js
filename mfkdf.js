@@ -98401,11 +98401,7 @@ if (typeof window !== 'undefined') {
  * @memberOf MFKDFDerivedKey
  * @async
  */
-async function getSubkey (
-  size = this.policy.size,
-  purpose = '',
-  digest = 'sha512'
-) {
+async function getSubkey (size = 32, purpose = '', digest = 'sha512') {
   const tag = digest + ';' + size + ';' + purpose
   if (this.subkeys[tag]) return this.subkeys[tag]
   const result = Buffer.from(await hkdf(digest, this.key, '', purpose, size))
@@ -98551,7 +98547,9 @@ module.exports.getAsymmetricKeyPair = getAsymmetricKeyPair
  */
 async function sign (message, method = 'rsa3072', auth = false) {
   if (typeof message === 'string') message = Buffer.from(message)
-  if (!Buffer.isBuffer(message)) { throw new TypeError('message must be a buffer') }
+  if (!Buffer.isBuffer(message)) {
+    throw new TypeError('message must be a buffer')
+  }
   method = method.toLowerCase()
 
   const key = await this.getAsymmetricKeyPair(method, auth)
@@ -98597,7 +98595,9 @@ module.exports.sign = sign
  */
 async function verify (message, signature, method = 'rsa3072') {
   if (typeof message === 'string') message = Buffer.from(message)
-  if (!Buffer.isBuffer(message)) { throw new TypeError('message must be a buffer') }
+  if (!Buffer.isBuffer(message)) {
+    throw new TypeError('message must be a buffer')
+  }
   method = method.toLowerCase()
 
   const key = await this.getAsymmetricKeyPair(method)
@@ -98646,7 +98646,9 @@ module.exports.verify = verify
  */
 async function encrypt (message, method = 'aes256', mode = 'CBC', auth = false) {
   if (typeof message === 'string') message = Buffer.from(message)
-  if (!Buffer.isBuffer(message)) { throw new TypeError('message must be a buffer') }
+  if (!Buffer.isBuffer(message)) {
+    throw new TypeError('message must be a buffer')
+  }
   method = method.toLowerCase()
   mode = mode.toUpperCase()
 
@@ -98668,37 +98670,37 @@ async function encrypt (message, method = 'aes256', mode = 'CBC', auth = false) 
     )
     const ct = await subtle.encrypt({ name: 'RSA-OAEP' }, cryptoKey, message)
     return Buffer.from(ct)
-  } else if (method === "rsa2048") {
+  } else if (method === 'rsa2048') {
     // RSA 2048
     const cryptoKey = await subtle.importKey(
-      "spki",
+      'spki',
       key.publicKey,
-      { name: "RSA-OAEP", hash: "SHA-256" },
+      { name: 'RSA-OAEP', hash: 'SHA-256' },
       false,
-      ["encrypt"]
-    );
-    const ct = await subtle.encrypt({ name: "RSA-OAEP" }, cryptoKey, message);
-    return Buffer.from(ct);
-  } else /* istanbul ignore if */ if (method === "des") {
+      ['encrypt']
+    )
+    const ct = await subtle.encrypt({ name: 'RSA-OAEP' }, cryptoKey, message)
+    return Buffer.from(ct)
+  } else /* istanbul ignore if */ if (method === 'des') {
     // DES
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(8);
-    cipher = crypto.createCipheriv("DES-" + mode, key, iv);
-  } else if (method === "3des") {
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(8)
+    cipher = crypto.createCipheriv('DES-' + mode, key, iv)
+  } else if (method === '3des') {
     // 3DES
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(8);
-    cipher = crypto.createCipheriv("DES-EDE3-" + mode, key, iv);
-  } else if (method === "aes128") {
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(8)
+    cipher = crypto.createCipheriv('DES-EDE3-' + mode, key, iv)
+  } else if (method === 'aes128') {
     // AES 128
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(16);
-    cipher = crypto.createCipheriv("AES-128-" + mode, key, iv);
-  } else if (method === "aes192") {
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(16)
+    cipher = crypto.createCipheriv('AES-128-' + mode, key, iv)
+  } else if (method === 'aes192') {
     // AES 192
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(16);
-    cipher = crypto.createCipheriv("AES-192-" + mode, key, iv);
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(16)
+    cipher = crypto.createCipheriv('AES-192-' + mode, key, iv)
   } else {
     // AES 256
-    iv = mode === "ECB" ? Buffer.from("") : crypto.randomBytes(16);
-    cipher = crypto.createCipheriv("AES-256-" + mode, key, iv);
+    iv = mode === 'ECB' ? Buffer.from('') : crypto.randomBytes(16)
+    cipher = crypto.createCipheriv('AES-256-' + mode, key, iv)
   }
 
   return Buffer.concat([iv, cipher.update(message), cipher.final()])
@@ -98731,7 +98733,9 @@ module.exports.encrypt = encrypt
  * @async
  */
 async function decrypt (message, method = 'aes256', mode = 'CBC') {
-  if (!Buffer.isBuffer(message)) { throw new TypeError('message must be a buffer') }
+  if (!Buffer.isBuffer(message)) {
+    throw new TypeError('message must be a buffer')
+  }
   method = method.toLowerCase()
   mode = mode.toUpperCase()
 
@@ -99506,9 +99510,15 @@ async function reconstitute (
   addFactors = [],
   threshold = this.policy.threshold
 ) {
-  if (!Array.isArray(removeFactors)) { throw new TypeError('removeFactors must be an array') }
-  if (!Array.isArray(addFactors)) { throw new TypeError('addFactors must be an array') }
-  if (!Number.isInteger(threshold)) { throw new TypeError('threshold must be an integer') }
+  if (!Array.isArray(removeFactors)) {
+    throw new TypeError('removeFactors must be an array')
+  }
+  if (!Array.isArray(addFactors)) {
+    throw new TypeError('addFactors must be an array')
+  }
+  if (!Number.isInteger(threshold)) {
+    throw new TypeError('threshold must be an integer')
+  }
   if (threshold <= 0) throw new RangeError('threshold must be positive')
 
   const factors = {}
@@ -99522,9 +99532,9 @@ async function reconstitute (
     const pad = Buffer.from(factor.pad, 'base64')
     const share = this.shares[index]
     let factorMaterial = xor(pad, share)
-    if (Buffer.byteLength(factorMaterial) > this.policy.size) {
+    if (Buffer.byteLength(factorMaterial) > 32) {
       factorMaterial = factorMaterial.subarray(
-        Buffer.byteLength(factorMaterial) - this.policy.size
+        Buffer.byteLength(factorMaterial) - 32
       )
     }
     material[factor.id] = factorMaterial
@@ -99532,8 +99542,12 @@ async function reconstitute (
 
   // remove selected factors
   for (const factor of removeFactors) {
-    if (typeof factor !== 'string') { throw new TypeError('factor must be a string') }
-    if (typeof factors[factor] !== 'object') { throw new RangeError('factor does not exist: ' + factor) }
+    if (typeof factor !== 'string') {
+      throw new TypeError('factor must be a string')
+    }
+    if (typeof factors[factor] !== 'object') {
+      throw new RangeError('factor does not exist: ' + factor)
+    }
     delete factors[factor]
     delete material[factor]
   }
@@ -99541,22 +99555,38 @@ async function reconstitute (
   // add new factors
   for (const factor of addFactors) {
     // type
-    if (typeof factor.type !== 'string') { throw new TypeError('factor type must be a string') }
-    if (factor.type.length === 0) { throw new RangeError('factor type must not be empty') }
+    if (typeof factor.type !== 'string') {
+      throw new TypeError('factor type must be a string')
+    }
+    if (factor.type.length === 0) {
+      throw new RangeError('factor type must not be empty')
+    }
 
     // id
-    if (typeof factor.id !== 'string') { throw new TypeError('factor id must be a string') }
-    if (factor.id.length === 0) { throw new RangeError('factor id must not be empty') }
+    if (typeof factor.id !== 'string') {
+      throw new TypeError('factor id must be a string')
+    }
+    if (factor.id.length === 0) {
+      throw new RangeError('factor id must not be empty')
+    }
 
     // data
-    if (!Buffer.isBuffer(factor.data)) { throw new TypeError('factor data must be a buffer') }
-    if (factor.data.length === 0) { throw new RangeError('factor data must not be empty') }
+    if (!Buffer.isBuffer(factor.data)) {
+      throw new TypeError('factor data must be a buffer')
+    }
+    if (factor.data.length === 0) {
+      throw new RangeError('factor data must not be empty')
+    }
 
     // params
-    if (typeof factor.params !== 'function') { throw new TypeError('factor params must be a function') }
+    if (typeof factor.params !== 'function') {
+      throw new TypeError('factor params must be a function')
+    }
 
     // output
-    if (typeof factor.output !== 'function') { throw new TypeError('factor output must be a function') }
+    if (typeof factor.output !== 'function') {
+      throw new TypeError('factor output must be a function')
+    }
 
     factors[factor.id] = {
       id: factor.id,
@@ -99570,11 +99600,15 @@ async function reconstitute (
 
   // new factor id uniqueness
   const ids = addFactors.map((factor) => factor.id)
-  if (new Set(ids).size !== ids.length) { throw new RangeError('factor ids must be unique') }
+  if (new Set(ids).size !== ids.length) {
+    throw new RangeError('factor ids must be unique')
+  }
 
   // threshold correctness
   const n = Object.entries(factors).length
-  if (!(threshold <= n)) { throw new RangeError('threshold cannot be greater than number of factors') }
+  if (!(threshold <= n)) {
+    throw new RangeError('threshold cannot be greater than number of factors')
+  }
 
   const shares = share(this.secret, threshold, n)
 
@@ -99584,13 +99618,11 @@ async function reconstitute (
     const share = shares[index]
     let stretched = Buffer.isBuffer(material[factor.id])
       ? material[factor.id]
-      : Buffer.from(
-        await hkdf('sha512', data[factor.id], '', '', this.policy.size)
-      )
+      : Buffer.from(await hkdf('sha512', data[factor.id], '', '', 32))
 
-    if (Buffer.byteLength(share) > this.policy.size) {
+    if (Buffer.byteLength(share) > 32) {
       stretched = Buffer.concat([
-        Buffer.alloc(Buffer.byteLength(share) - this.policy.size),
+        Buffer.alloc(Buffer.byteLength(share) - 32),
         stretched
       ])
     }
@@ -100468,6 +100500,7 @@ const kdf = (__webpack_require__(4861).kdf)
 const { hkdf } = __webpack_require__(8213)
 const xor = __webpack_require__(7295)
 const MFKDFDerivedKey = __webpack_require__(8310)
+const kdfSetup = (__webpack_require__(6336).kdf)
 
 /**
  * Derive a key from multiple factors of input
@@ -100478,7 +100511,7 @@ const MFKDFDerivedKey = __webpack_require__(8310)
  *   await mfkdf.setup.factors.password('password'),
  *   await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
  *   await mfkdf.setup.factors.uuid({ id: 'recovery', uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
- * ], {threshold: 2, size: 16})
+ * ], {threshold: 2})
  *
  * // derive key using 2 of the 3 factors
  * const derive = await mfkdf.derive.key(setup.policy, {
@@ -100491,17 +100524,22 @@ const MFKDFDerivedKey = __webpack_require__(8310)
  *
  * @param {Object} policy - The key policy for the key being derived
  * @param {Object.<string, MFKDFFactor>} factors - Factors used to derive this key
+ * @param {Object} [options] - Configuration options
+ * @param {number} [options.time=2] - Argon2id iterations to use (minimum 2)
+ * @param {number} [options.memory=24576] - Argon2id memory to use (minimum 24576)
  * @returns {MFKDFDerivedKey} A multi-factor derived key object
  * @author Multifactor <support@multifactor.com>
  * @since 0.9.0
  * @async
  * @memberOf derive
  */
-async function key (policy, factors) {
+async function key (policy, factors, options) {
   const ajv = new Ajv()
   const valid = ajv.validate(policySchema, policy)
-  if (!valid) throw new TypeError('invalid key policy', ajv.errors)
-  if (Object.keys(factors).length < policy.threshold) { throw new RangeError('insufficient factors provided to derive key') }
+  if (!valid) throw new TypeError('invalid key policy: ' + ajv.errorsText())
+  if (Object.keys(factors).length < policy.threshold) {
+    throw new RangeError('insufficient factors provided to derive key')
+  }
 
   const shares = []
   const newFactors = []
@@ -100523,11 +100561,11 @@ async function key (policy, factors) {
 
         const pad = Buffer.from(factor.pad, 'base64')
         let stretched = Buffer.from(
-          await hkdf('sha512', material.data, '', '', policy.size)
+          await hkdf('sha512', material.data, '', '', 32)
         )
-        if (Buffer.byteLength(pad) > policy.size) {
+        if (Buffer.byteLength(pad) > 32) {
           stretched = Buffer.concat([
-            Buffer.alloc(Buffer.byteLength(pad) - policy.size),
+            Buffer.alloc(Buffer.byteLength(pad) - 32),
             stretched
           ])
         }
@@ -100544,14 +100582,26 @@ async function key (policy, factors) {
     }
   }
 
-  if (shares.filter((x) => Buffer.isBuffer(x)).length < policy.threshold) { throw new RangeError('insufficient factors provided to derive key') }
+  if (shares.filter((x) => Buffer.isBuffer(x)).length < policy.threshold) {
+    throw new RangeError('insufficient factors provided to derive key')
+  }
+
+  // kdf
+  const kdfSettings = kdfSetup({
+    kdf: 'argon2id',
+    argon2time: Math.max(2, options && options.time ? options.time : 2),
+    argon2mem: Math.max(
+      24576,
+      options && options.memory ? options.memory : 24576
+    )
+  })
 
   const secret = combine(shares, policy.threshold, policy.factors.length)
   const key = await kdf(
     secret,
     Buffer.from(policy.salt, 'base64'),
-    policy.size,
-    policy.kdf
+    32,
+    kdfSettings
   )
 
   const newPolicy = JSON.parse(JSON.stringify(policy))
@@ -102087,7 +102137,7 @@ const setupKey = (__webpack_require__(1209).key)
  * // setup key with hmacsha1 factor
  * const setup = await mfkdf.setup.key([
  *   await mfkdf.setup.factors.hmacsha1()
- * ], {size: 8})
+ * ])
  *
  * // calculate response; could be done using hardware device
  * const secret = setup.outputs.hmacsha1.secret
@@ -102105,7 +102155,6 @@ const setupKey = (__webpack_require__(1209).key)
  * @param {Array.<MFKDFFactor>} factors - Array of factors used to derive this key
  * @param {Object} [options] - Configuration options
  * @param {string} [options.id='stack'] - Unique identifier for this factor
- * @param {number} [options.size=32] - Size of derived key, in bytes
  * @param {number} [options.threshold] - Number of factors required to derive key; factors.length by default (all required)
  * @param {Buffer} [options.salt] - Cryptographic salt; generated via secure PRG by default (recommended)
  * @param {string} [options.kdf='pbkdf2'] - KDF algorithm to use; pbkdf2, bcrypt, scrypt, argon2i, argon2d, or argon2id
@@ -102127,7 +102176,9 @@ const setupKey = (__webpack_require__(1209).key)
 async function stack (factors, options) {
   options = Object.assign(Object.assign({}, defaults.stack), options)
 
-  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
+  }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
   const key = await setupKey(factors, options)
@@ -102555,7 +102606,7 @@ const MFKDFDerivedKey = __webpack_require__(8310)
  *   await mfkdf.setup.factors.password('password'),
  *   await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
  *   await mfkdf.setup.factors.uuid({ id: 'recovery', uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
- * ], {threshold: 2, size: 16})
+ * ], {threshold: 2})
  *
  * // derive key using 2 of the 3 factors
  * const derive = await mfkdf.derive.key(setup.policy, {
@@ -102569,20 +102620,10 @@ const MFKDFDerivedKey = __webpack_require__(8310)
  * @param {Array.<MFKDFFactor>} factors - Array of factors used to derive this key
  * @param {Object} [options] - Configuration options
  * @param {string} [options.id] - Unique identifier for this key; random UUIDv4 generated by default
- * @param {number} [options.size=32] - Size of derived key, in bytes
  * @param {number} [options.threshold] - Number of factors required to derive key; factors.length by default (all required)
  * @param {Buffer} [options.salt] - Cryptographic salt; generated via secure PRG by default (recommended)
- * @param {string} [options.kdf='argon2id'] - KDF algorithm to use; hkdf, pbkdf2, bcrypt, scrypt, argon2i, argon2d, or argon2id
- * @param {string} [options.hkdfdigest='sha256'] - Hash function to use if using hkdf; one of sha1, sha256, sha384, or sha512
- * @param {number} [options.pbkdf2rounds=310000] - Number of rounds to use if using pbkdf2
- * @param {string} [options.pbkdf2digest='sha256'] - Hash function to use if using pbkdf2; one of sha1, sha256, sha384, or sha512
- * @param {number} [options.bcryptrounds=10] - Number of rounds to use if using bcrypt
- * @param {number} [options.scryptcost=16384] - Iterations count (N) to use if using scrypt
- * @param {number} [options.scryptblocksize=8] - Block size (r) to use if using scrypt
- * @param {number} [options.scryptparallelism=1] - Parallelism factor (p) to use if using scrypt
- * @param {number} [options.argon2time=2] - Iterations to use if using argon2
- * @param {number} [options.argon2mem=24576] - Memory to use if using argon2
- * @param {number} [options.argon2parallelism=1] - Parallelism to use if using argon2
+ * @param {number} [options.time=2] - Argon2id iterations to use (minimum 2)
+ * @param {number} [options.memory=24576] - Argon2id memory to use (minimum 24576)
  * @returns {MFKDFDerivedKey} A multi-factor derived key object
  * @author Multifactor <support@multifactor.com>
  * @since 0.8.0
@@ -102596,64 +102637,94 @@ async function key (factors, options) {
   options = Object.assign(Object.assign({}, defaults.key), options)
 
   const policy = {
-    $schema: 'https://mfkdf.com/schema/v1.0.0/policy.json'
+    $schema: 'https://mfkdf.com/schema/v2.0.0/policy.json'
   }
 
   // id
   if (options.id === undefined) options.id = uuidv4()
-  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
+  }
   if (options.id.length === 0) throw new RangeError('id must not be empty')
   policy.$id = options.id
 
-  // size
-  if (!Number.isInteger(options.size)) { throw new TypeError('key size must be an integer') }
-  if (!(options.size > 0)) throw new RangeError('key size must be positive')
-  policy.size = options.size
-
   // threshold
   if (options.threshold === undefined) options.threshold = factors.length
-  if (!Number.isInteger(options.threshold)) { throw new TypeError('threshold must be an integer') }
-  if (!(options.threshold > 0)) { throw new RangeError('threshold must be positive') }
-  if (!(options.threshold <= factors.length)) { throw new RangeError('threshold cannot be greater than number of factors') }
+  if (!Number.isInteger(options.threshold)) {
+    throw new TypeError('threshold must be an integer')
+  }
+  if (!(options.threshold > 0)) {
+    throw new RangeError('threshold must be positive')
+  }
+  if (!(options.threshold <= factors.length)) {
+    throw new RangeError('threshold cannot be greater than number of factors')
+  }
   policy.threshold = options.threshold
 
   // salt
-  if (options.salt === undefined) { options.salt = crypto.randomBytes(policy.size) }
-  if (!Buffer.isBuffer(options.salt)) { throw new TypeError('salt must be a buffer') }
+  if (options.salt === undefined) {
+    options.salt = crypto.randomBytes(32)
+  }
+  if (!Buffer.isBuffer(options.salt)) {
+    throw new TypeError('salt must be a buffer')
+  }
   policy.salt = options.salt.toString('base64')
 
   // kdf
-  policy.kdf = kdfSetup(options)
+  const kdfSettings = kdfSetup({
+    kdf: 'argon2id',
+    argon2time: Math.max(2, options && options.time ? options.time : 2),
+    argon2mem: Math.max(
+      24576,
+      options && options.memory ? options.memory : 24576
+    )
+  })
 
   // check factor correctness
   for (const factor of factors) {
     // type
-    if (typeof factor.type !== 'string') { throw new TypeError('factor type must be a string') }
-    if (factor.type.length === 0) { throw new RangeError('factor type must not be empty') }
+    if (typeof factor.type !== 'string') {
+      throw new TypeError('factor type must be a string')
+    }
+    if (factor.type.length === 0) {
+      throw new RangeError('factor type must not be empty')
+    }
 
     // id
-    if (typeof factor.id !== 'string') { throw new TypeError('factor id must be a string') }
-    if (factor.id.length === 0) { throw new RangeError('factor id must not be empty') }
+    if (typeof factor.id !== 'string') {
+      throw new TypeError('factor id must be a string')
+    }
+    if (factor.id.length === 0) {
+      throw new RangeError('factor id must not be empty')
+    }
 
     // data
-    if (!Buffer.isBuffer(factor.data)) { throw new TypeError('factor data must be a buffer') }
-    if (factor.data.length === 0) { throw new RangeError('factor data must not be empty') }
+    if (!Buffer.isBuffer(factor.data)) {
+      throw new TypeError('factor data must be a buffer')
+    }
+    if (factor.data.length === 0) {
+      throw new RangeError('factor data must not be empty')
+    }
 
     // params
-    if (typeof factor.params !== 'function') { throw new TypeError('factor params must be a function') }
+    if (typeof factor.params !== 'function') {
+      throw new TypeError('factor params must be a function')
+    }
   }
 
   // id uniqueness
   const ids = factors.map((factor) => factor.id)
-  if (new Set(ids).size !== ids.length) { throw new RangeError('factor ids must be unique') }
+  if (new Set(ids).size !== ids.length) {
+    throw new RangeError('factor ids must be unique')
+  }
 
   // generate secret key material
-  const secret = crypto.randomBytes(policy.size)
+  const secret = crypto.randomBytes(32)
   const key = await kdf(
     secret,
     Buffer.from(policy.salt, 'base64'),
-    policy.size,
-    policy.kdf
+    32,
+    kdfSettings
   )
   const shares = share(secret, policy.threshold, factors.length)
 
@@ -102670,12 +102741,10 @@ async function key (factors, options) {
     theoreticalEntropy.push(factor.data.byteLength * 8)
     realEntropy.push(factor.entropy)
 
-    let stretched = Buffer.from(
-      await hkdf('sha512', factor.data, '', '', policy.size)
-    )
-    if (Buffer.byteLength(share) > policy.size) {
+    let stretched = Buffer.from(await hkdf('sha512', factor.data, '', '', 32))
+    if (Buffer.byteLength(share) > 32) {
       stretched = Buffer.concat([
-        Buffer.alloc(Buffer.byteLength(share) - policy.size),
+        Buffer.alloc(Buffer.byteLength(share) - 32),
         stretched
       ])
     }
@@ -102704,8 +102773,8 @@ async function key (factors, options) {
     .reduce((a, b) => a + b, 0)
 
   result.entropyBits = {
-    theoretical: Math.min(policy.size * 8, theoretical),
-    real: Math.min(policy.size * 8, real)
+    theoretical: Math.min(256, theoretical),
+    real: Math.min(256, real)
   }
 
   return result
@@ -103167,7 +103236,7 @@ module.exports = JSON.parse('{"2.16.840.1.101.3.4.1.1":"aes-128-ecb","2.16.840.1
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"$schema":"http://json-schema.org/draft-07/schema","$id":"https://mfkdf.com/schema/v1.0.0/policy.json","type":"object","title":"Multi-Factor Derived Key Policy Schema","description":"A multi-factor derived key policy defines the factors and methods used to derive a key via multi-factor key derivation.","required":["threshold","salt","size","kdf","factors","$id","$schema"],"properties":{"$schema":{"type":"string","title":"Key Schema","description":"Link to the version of the schema that can validate the key policy."},"$id":{"type":"string","title":"Key ID","description":"String which uniquely identifies this key."},"threshold":{"type":"integer","title":"Factor Threshold","description":"The number of correct factors needed to derive this key."},"size":{"type":"integer","title":"Key Size","description":"Size of key to derive (in bytes)."},"kdf":{"type":"object","title":"Key Derivation Function","description":"Underlying KDF to use for key derivation.","required":["type","params"],"properties":{"type":{"type":"string","title":"KDF Type","description":"Name of the key derivation function to use."},"params":{"type":"object","title":"KDF Parameters","description":"Parameters required by chosen key derivation function.","required":[]}}},"salt":{"type":"string","title":"KDF Salt","description":"Base-64 encoded salt value used as additional input to the KDF."},"factors":{"type":"array","title":"Factors","description":"Factors which can be used to derive this key.","items":{"type":"object","title":"Factor","description":"Factor which can be used to derive this key.","required":["id","type","pad","params"],"properties":{"id":{"type":"string","title":"Factor ID","description":"String which uniquely identifies this factor."},"type":{"type":"string","title":"Factor Type","description":"Name of the factor material function to use."},"pad":{"type":"string","title":"Factor Pad","description":"Base-64 encoded intermediate value to combine with factor material."},"params":{"type":"object","title":"Factor Parameters","description":"Parameters required by chosen factor material function.","required":[]}}}},"secrets":{"type":"array","title":"Secrets","description":"Enveloped secrets encrypted with this key.","items":{"type":"object","title":"Factor","description":"Enveloped secret encrypted with this key.","required":["id","type","value"],"properties":{"id":{"type":"string","title":"Secret ID","description":"String which uniquely identifies this enveloped secret."},"type":{"type":"string","title":"Secret Type","description":"Type of enveloped secret."},"value":{"type":"string","title":"Secret Value","description":"Base-64 encoded ciphertext value encrypted with this key."}}}}}}');
+module.exports = JSON.parse('{"$schema":"http://json-schema.org/draft-07/schema","$id":"https://mfkdf.com/schema/v2.0.0/policy.json","type":"object","title":"Multi-Factor Derived Key Policy Schema","description":"A multi-factor derived key policy defines the factors and methods used to derive a key via multi-factor key derivation.","required":["threshold","salt","factors","$id","$schema"],"properties":{"$schema":{"type":"string","title":"Key Schema","description":"Link to the version of the schema that can validate the key policy."},"$id":{"type":"string","title":"Key ID","description":"String which uniquely identifies this key."},"threshold":{"type":"integer","title":"Factor Threshold","description":"The number of correct factors needed to derive this key."},"salt":{"type":"string","title":"KDF Salt","description":"Base-64 encoded salt value used as additional input to the KDF."},"factors":{"type":"array","title":"Factors","description":"Factors which can be used to derive this key.","items":{"type":"object","title":"Factor","description":"Factor which can be used to derive this key.","required":["id","type","pad","params"],"properties":{"id":{"type":"string","title":"Factor ID","description":"String which uniquely identifies this factor."},"type":{"type":"string","title":"Factor Type","description":"Name of the factor material function to use."},"pad":{"type":"string","title":"Factor Pad","description":"Base-64 encoded intermediate value to combine with factor material."},"params":{"type":"object","title":"Factor Parameters","description":"Parameters required by chosen factor material function.","required":[]}}}},"secrets":{"type":"array","title":"Secrets","description":"Enveloped secrets encrypted with this key.","items":{"type":"object","title":"Factor","description":"Enveloped secret encrypted with this key.","required":["id","type","value"],"properties":{"id":{"type":"string","title":"Secret ID","description":"String which uniquely identifies this enveloped secret."},"type":{"type":"string","title":"Secret Type","description":"Type of enveloped secret."},"value":{"type":"string","title":"Secret Value","description":"Base-64 encoded ciphertext value encrypted with this key."}}}}}}');
 
 /***/ })
 

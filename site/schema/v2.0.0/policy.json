@@ -4,7 +4,7 @@
   "type": "object",
   "title": "Multi-Factor Derived Key Policy Schema",
   "description": "A multi-factor derived key policy defines the factors and methods used to derive a key via multi-factor key derivation.",
-  "required": ["threshold", "salt", "kdf", "factors", "$id", "$schema"],
+  "required": ["threshold", "salt", "factors", "$id", "$schema"],
   "properties": {
     "$schema": {
       "type": "string",
@@ -20,25 +20,6 @@
       "type": "integer",
       "title": "Factor Threshold",
       "description": "The number of correct factors needed to derive this key."
-    },
-    "kdf": {
-      "type": "object",
-      "title": "Key Derivation Function",
-      "description": "Underlying KDF to use for key derivation.",
-      "required": ["type", "params"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "title": "KDF Type",
-          "description": "Name of the key derivation function to use."
-        },
-        "params": {
-          "type": "object",
-          "title": "KDF Parameters",
-          "description": "Parameters required by chosen key derivation function.",
-          "required": []
-        }
-      }
     },
     "salt": {
       "type": "string",
