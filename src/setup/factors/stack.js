@@ -29,8 +29,8 @@ const setupKey = require('../key').key
  *   hmacsha1: mfkdf.derive.factors.hmacsha1(response)
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {Array.<MFKDFFactor>} factors - Array of factors used to derive this key
  * @param {Object} [options] - Configuration options

@@ -189,7 +189,7 @@
 
     
 
-    <h4 class="name" id=".key"><span class="type-signature type-signature-async, static">(async, static) </span>key<span class="signature">(policy, factors)</span><span class="type-signature"> &rarr; {<a href="MFKDFDerivedKey.html">MFKDFDerivedKey</a>}</span></h4>
+    <h4 class="name" id=".key"><span class="type-signature type-signature-async, static">(async, static) </span>key<span class="signature">(policy, factors, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="MFKDFDerivedKey.html">MFKDFDerivedKey</a>}</span></h4>
 
     
 
@@ -205,7 +205,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="derive_key.js.html">derive/key.js</a>, <a href="derive_key.js.html#line48">line 48</a>
+        <a href="derive_key.js.html">derive/key.js</a>, <a href="derive_key.js.html#line52">line 52</a>
     </li></ul></dd>
     
 
@@ -232,7 +232,7 @@
     <dt class="tag-author">Author:</dt>
     <dd class="tag-author">
         <ul>
-            <li>Vivek Nair (https://nair.me) &lt;vivek@nair.me></li>
+            <li><a href="mailto:support@multifactor.com">Multifactor</a></li>
         </ul>
     </dd>
     
@@ -262,7 +262,7 @@
 
     <h5 class="h5-examples">Example</h5>
     
-    <pre class="prettyprint"><code>// setup 16 byte 2-of-3-factor multi-factor derived key with a password, HOTP code, and UUID recovery codeconst setup = await mfkdf.setup.key([  await mfkdf.setup.factors.password('password'),  await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),  await mfkdf.setup.factors.uuid({ id: 'recovery', uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })], {threshold: 2, size: 16})// derive key using 2 of the 3 factorsconst derive = await mfkdf.derive.key(setup.policy, {  password: mfkdf.derive.factors.password('password'),  hotp: mfkdf.derive.factors.hotp(365287)})setup.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771derive.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771</code></pre>
+    <pre class="prettyprint"><code>// setup 16 byte 2-of-3-factor multi-factor derived key with a password, HOTP code, and UUID recovery codeconst setup = await mfkdf.setup.key([  await mfkdf.setup.factors.password('password'),  await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),  await mfkdf.setup.factors.uuid({ id: 'recovery', uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })], {threshold: 2})// derive key using 2 of the 3 factorsconst derive = await mfkdf.derive.key(setup.policy, {  password: mfkdf.derive.factors.password('password'),  hotp: mfkdf.derive.factors.hotp(365287)})setup.key.toString('hex') // -> 34…71derive.key.toString('hex') // -> 34…71</code></pre>
 
 
 
@@ -279,6 +279,8 @@
 
         <th>Type</th>
 
+        
+        <th>Attributes</th>
         
 
         
@@ -306,6 +308,14 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -330,10 +340,162 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last">Factors used to derive this key</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Configuration options
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>time</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>2</code>
+                
+                </td>
+            
+
+            <td class="description last">Argon2id iterations to use (minimum 2)</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>memory</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>24576</code>
+                
+                </td>
+            
+
+            <td class="description last">Argon2id memory to use (minimum 24576)</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -401,7 +563,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Sun Aug 13 2023 12:58:17 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Sat May 31 2025 19:55:39 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

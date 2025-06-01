@@ -44,7 +44,7 @@ function expand (policy, factors) {
  *       await mfkdf.setup.factors.password('passwordB', { id: 'passwordB' }),
  *       await mfkdf.setup.factors.password('passwordC', { id: 'passwordC' })
  *     )
- *   ), { size: 8 }
+ *   )
  * )
  *
  * // derive key with passwordA and passwordC (or passwordA and passwordB)
@@ -67,7 +67,9 @@ function expand (policy, factors) {
 async function derive (policy, factors) {
   const ids = Object.keys(factors)
   if (!validate(policy)) throw new TypeError('policy contains duplicate ids')
-  if (!evaluate(policy, ids)) { throw new RangeError('insufficient factors to derive key') }
+  if (!evaluate(policy, ids)) {
+    throw new RangeError('insufficient factors to derive key')
+  }
 
   const expanded = expand(policy, factors)
 

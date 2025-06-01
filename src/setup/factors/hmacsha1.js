@@ -30,8 +30,8 @@ const xor = require('buffer-xor')
  *   hmacsha1: mfkdf.derive.factors.hmacsha1(response)
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {Object} [options] - Configuration options
  * @param {string} [options.id='hmacsha1'] - Unique identifier for this factor
@@ -45,12 +45,20 @@ const xor = require('buffer-xor')
 async function hmacsha1 (options) {
   options = Object.assign(Object.assign({}, defaults.hmacsha1), options)
 
-  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
+  }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
-  if (typeof options.secret === 'undefined') { options.secret = crypto.randomBytes(20) }
-  if (!Buffer.isBuffer(options.secret)) { throw new TypeError('secret must be a buffer') }
-  if (Buffer.byteLength(options.secret) !== 20) { throw new RangeError('secret must be 20 bytes') }
+  if (typeof options.secret === 'undefined') {
+    options.secret = crypto.randomBytes(20)
+  }
+  if (!Buffer.isBuffer(options.secret)) {
+    throw new TypeError('secret must be a buffer')
+  }
+  if (Buffer.byteLength(options.secret) !== 20) {
+    throw new RangeError('secret must be 20 bytes')
+  }
 
   return {
     type: 'hmacsha1',

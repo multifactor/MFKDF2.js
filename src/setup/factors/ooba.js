@@ -43,8 +43,8 @@ if (typeof window !== 'undefined') {
  *   ooba: mfkdf.derive.factors.ooba(code)
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {Object} [options] - Configuration options
  * @param {string} [options.id='ooba'] - Unique identifier for this factor
@@ -59,13 +59,21 @@ if (typeof window !== 'undefined') {
  */
 async function ooba (options) {
   options = Object.assign(Object.assign({}, defaults.ooba), options)
-  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
+  }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
-  if (!Number.isInteger(options.length)) { throw new TypeError('length must be an interger') }
+  if (!Number.isInteger(options.length)) {
+    throw new TypeError('length must be an interger')
+  }
   if (options.length <= 0) throw new RangeError('length must be positive')
   if (options.length > 32) throw new RangeError('length must be at most 32')
-  if (options.key.type !== 'public') { throw new TypeError('key must be a public CryptoKey') }
-  if (typeof options.params !== 'object') { throw new TypeError('params must be an object') }
+  if (options.key.type !== 'public') {
+    throw new TypeError('key must be a public CryptoKey')
+  }
+  if (typeof options.params !== 'object') {
+    throw new TypeError('params must be an object')
+  }
 
   const target = crypto.randomBytes(options.length)
 

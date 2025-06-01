@@ -32,8 +32,8 @@ const share = require('../../secrets/share').share
  *  password3: mfkdf.derive.factors.password('password3')
  * })
  *
- * setup.key.toString('hex') // -> 64587f2a0e65dc3c
- * derived.key.toString('hex') // -> 64587f2a0e65dc3c
+ * setup.key.toString('hex') // -> 64…3c
+ * derived.key.toString('hex') // -> 64…3c
  *
  * @param {number} threshold - New threshold for key derivation
  * @author Multifactor <support@multifactor.com>
@@ -66,8 +66,8 @@ module.exports.setThreshold = setThreshold
  *  password3: mfkdf.derive.factors.password('password3')
  * })
  *
- * setup.key.toString('hex') // -> 64587f2a0e65dc3c
- * derived.key.toString('hex') // -> 64587f2a0e65dc3c
+ * setup.key.toString('hex') // -> 64…3c
+ * derived.key.toString('hex') // -> 64…3c
  *
  * @param {string} id - ID of existing factor to remove
  * @author Multifactor <support@multifactor.com>
@@ -99,8 +99,8 @@ module.exports.removeFactor = removeFactor
  *  password3: mfkdf.derive.factors.password('password3')
  * })
  *
- * setup.key.toString('hex') // -> 64587f2a0e65dc3c
- * derived.key.toString('hex') // -> 64587f2a0e65dc3c
+ * setup.key.toString('hex') // -> 64…3c
+ * derived.key.toString('hex') // -> 64…3c
  *
  * @param {Array.<string>} ids - Array of IDs of existing factors to remove
  * @author Multifactor <support@multifactor.com>
@@ -135,8 +135,8 @@ module.exports.removeFactors = removeFactors
  *  password4: mfkdf.derive.factors.password('password4')
  * })
  *
- * setup.key.toString('hex') // -> 64587f2a0e65dc3c
- * derived.key.toString('hex') // -> 64587f2a0e65dc3c
+ * setup.key.toString('hex') // -> 64…3c
+ * derived.key.toString('hex') // -> 64…3c
  *
  * @param {MFKDFFactor} factor - Factor to add
  * @author Multifactor <support@multifactor.com>
@@ -172,8 +172,8 @@ module.exports.addFactor = addFactor
  *   password5: mfkdf.derive.factors.password('password5')
  * })
  *
- * setup.key.toString('hex') // -> 64587f2a0e65dc3c
- * derived.key.toString('hex') // -> 64587f2a0e65dc3c
+ * setup.key.toString('hex') // -> 64…3c
+ * derived.key.toString('hex') // -> 64…3c
  *
  * @param {Array.<MFKDFFactor>} factors - Array of factors to add
  * @author Multifactor <support@multifactor.com>
@@ -209,8 +209,8 @@ module.exports.addFactors = addFactors
  *  password3: mfkdf.derive.factors.password('password3')
  * })
  *
- * setup.key.toString('hex') // -> 64587f2a0e65dc3c
- * derived.key.toString('hex') // -> 64587f2a0e65dc3c
+ * setup.key.toString('hex') // -> 64…3c
+ * derived.key.toString('hex') // -> 64…3c
  *
  * @param {MFKDFFactor} factor - Factor to replace
  * @author Multifactor <support@multifactor.com>
@@ -247,8 +247,8 @@ module.exports.recoverFactor = recoverFactor
  *  password3: mfkdf.derive.factors.password('newPassword3')
  * })
  *
- * setup.key.toString('hex') // -> 64587f2a0e65dc3c
- * derived.key.toString('hex') // -> 64587f2a0e65dc3c
+ * setup.key.toString('hex') // -> 64…3c
+ * derived.key.toString('hex') // -> 64…3c
  *
  * @param {Array.<MFKDFFactor>} factors - Array of factors to replace
  * @author Multifactor <support@multifactor.com>
@@ -284,8 +284,8 @@ module.exports.recoverFactors = recoverFactors
  *   password4: mfkdf.derive.factors.password('password4')
  * })
  *
- * setup.key.toString('hex') // -> 64587f2a0e65dc3c
- * derived.key.toString('hex') // -> 64587f2a0e65dc3c
+ * setup.key.toString('hex') // -> 64…3c
+ * derived.key.toString('hex') // -> 64…3c
  *
  * @param {Array.<string>} [removeFactors] - Array of IDs of existing factors to remove
  * @param {Array.<MFKDFFactor>} [addFactors] - Array of factors to add or replace

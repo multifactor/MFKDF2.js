@@ -34,8 +34,8 @@ function mod (n, m) {
  *   totp: mfkdf.derive.factors.totp(528258, { time: 1650430943604 })
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {Object} [options] - Configuration options
  * @param {string} [options.id='totp'] - Unique identifier for this factor
@@ -56,19 +56,36 @@ function mod (n, m) {
 async function totp (options) {
   options = Object.assign(Object.assign({}, defaults.totp), options)
 
-  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
+  }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
-  if (!Number.isInteger(options.digits)) { throw new TypeError('digits must be an interger') }
+  if (!Number.isInteger(options.digits)) {
+    throw new TypeError('digits must be an interger')
+  }
   if (options.digits < 6) throw new RangeError('digits must be at least 6')
   if (options.digits > 8) throw new RangeError('digits must be at most 8')
-  if (!Number.isInteger(options.step)) { throw new TypeError('step must be an interger') }
+  if (!Number.isInteger(options.step)) {
+    throw new TypeError('step must be an interger')
+  }
   if (options.step < 0) throw new RangeError('step must be positive')
-  if (!Number.isInteger(options.window)) { throw new TypeError('window must be an interger') }
+  if (!Number.isInteger(options.window)) {
+    throw new TypeError('window must be an interger')
+  }
   if (options.window < 0) throw new RangeError('window must be positive')
-  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) { throw new RangeError('unrecognized hash function') }
-  if (!Buffer.isBuffer(options.secret) && typeof options.secret !== 'undefined') { throw new TypeError('secret must be a buffer') }
+  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) {
+    throw new RangeError('unrecognized hash function')
+  }
+  if (
+    !Buffer.isBuffer(options.secret) &&
+    typeof options.secret !== 'undefined'
+  ) {
+    throw new TypeError('secret must be a buffer')
+  }
   if (typeof options.time === 'undefined') options.time = Date.now()
-  if (!Number.isInteger(options.time)) { throw new TypeError('time must be an integer') }
+  if (!Number.isInteger(options.time)) {
+    throw new TypeError('time must be an integer')
+  }
   if (options.time <= 0) throw new RangeError('time must be positive')
 
   const target = await random(0, 10 ** options.digits - 1)
@@ -81,7 +98,9 @@ async function totp (options) {
     data: buffer,
     entropy: Math.log2(10 ** options.digits),
     params: async ({ key }) => {
-      if (typeof options.secret === 'undefined') { options.secret = crypto.randomBytes(Buffer.byteLength(key)) }
+      if (typeof options.secret === 'undefined') {
+        options.secret = crypto.randomBytes(Buffer.byteLength(key))
+      }
 
       const time = options.time
       const offsets = Buffer.allocUnsafe(4 * options.window)

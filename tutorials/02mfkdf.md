@@ -8,7 +8,7 @@ const setup = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('password'),
   await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
   await mfkdf.setup.factors.uuid({ uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
-], { size: 16 })
+])
 ```
 
 Every factor in a multi-factor derived key must have a unique ID. If you use multiple factors of the same type, make sure to specify an ID like so:
@@ -17,13 +17,13 @@ Every factor in a multi-factor derived key must have a unique ID. If you use mul
 const result = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('Tr0ub4dour', { id: 'password1' }),
   await mfkdf.setup.factors.password('abcdefgh', { id: 'password2' })
-], { size: 32 })
+])
 ```
 
 Setup returns an {@link MFKDFDerivedKey} object. Therefore, you can now access the derived key directly:
 
 ```
-setup.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+setup.key.toString('hex') // -> 34…71
 ```
 
 Some of the factors you setup may have their own outputs at this stage. You can access them like so:
@@ -61,7 +61,7 @@ Derive also returns an {@link MFKDFDerivedKey} object. Therefore, you can again 
 
 ```
 // key should be the same if correct factors are provided
-derive.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+derive.key.toString('hex') // -> 34…71
 ```
 
 Some factors (like TOTP and HOTP) cause the key policy to change every time it is derived. Thus, don't forget to save the new key policy after deriving it:

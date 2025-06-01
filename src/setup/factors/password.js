@@ -24,8 +24,8 @@ const zxcvbn = require('zxcvbn')
  *   password: mfkdf.derive.factors.password('password')
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {string} password - The password from which to derive an MFKDF factor
  * @param {Object} [options] - Configuration options
@@ -37,12 +37,16 @@ const zxcvbn = require('zxcvbn')
  * @memberof setup.factors
  */
 async function password (password, options) {
-  if (typeof password !== 'string') { throw new TypeError('password must be a string') }
+  if (typeof password !== 'string') {
+    throw new TypeError('password must be a string')
+  }
   if (password.length === 0) throw new RangeError('password cannot be empty')
 
   options = Object.assign(Object.assign({}, defaults.password), options)
 
-  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
+  }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
   const strength = zxcvbn(password)

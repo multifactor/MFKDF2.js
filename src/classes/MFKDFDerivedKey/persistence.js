@@ -29,8 +29,8 @@
  *  password3: mfkdf.derive.factors.password('password3')
  * })
  *
- * setup.key.toString('hex') // -> 64587f2a0e65dc3c
- * derived.key.toString('hex') // -> 64587f2a0e65dc3c
+ * setup.key.toString('hex') // -> 64…3c
+ * derived.key.toString('hex') // -> 64…3c
  *
  * @param {string} id - ID of the factor to persist
  * @returns {Buffer} - The share which can be used to bypass the factor

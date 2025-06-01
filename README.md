@@ -90,7 +90,7 @@ const setup = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('password'),
   await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
   await mfkdf.setup.factors.uuid({ uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
-], { size: 16 })
+])
 ```
 
 Every factor in a multi-factor derived key must have a unique ID. If you use multiple factors of the same type, make sure to specify an ID like so:
@@ -99,13 +99,13 @@ Every factor in a multi-factor derived key must have a unique ID. If you use mul
 const result = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('Tr0ub4dour', { id: 'password1' }),
   await mfkdf.setup.factors.password('abcdefgh', { id: 'password2' })
-], { size: 32 })
+])
 ```
 
 Setup returns an [MFKDFDerivedKey](https://mfkdf.com/docs/MFKDFDerivedKey.html) object. Therefore, you can now access the derived key directly:
 
 ```
-setup.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+setup.key.toString('hex') // -> 34…71
 ```
 
 Some of the factors you setup may have their own outputs at this stage. You can access them like so:
@@ -143,7 +143,7 @@ Derive also returns an [MFKDFDerivedKey](https://mfkdf.com/docs/MFKDFDerivedKey.
 
 ```
 // key should be the same if correct factors are provided
-derive.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+derive.key.toString('hex') // -> 34…71
 ```
 
 Some factors (like TOTP and HOTP) cause the key policy to change every time it is derived. Thus, don't forget to save the new key policy after deriving it:
@@ -179,8 +179,8 @@ const setup = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('password'),
   await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
   await mfkdf.setup.factors.uuid({ uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
-], { size: 16, threshold: 2 })
-setup.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+], { threshold: 2 })
+setup.key.toString('hex') // -> 34…71
 ```
 
 Behind the scenes, a secret sharing scheme such as Shamir's Secret Sharing is used to split the key into shares that can be derived using each factor, some threshold of which are required to retrieve the key.
@@ -194,7 +194,7 @@ const derive = await mfkdf.derive.key(setup.policy, {
   hotp: mfkdf.derive.factors.hotp(365287),
   uuid: mfkdf.derive.factors.uuid('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d')
 })
-derive.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+derive.key.toString('hex') // -> 34…71
 ```
 
 ## Suggested Uses
@@ -219,8 +219,8 @@ const setup = await mfkdf.setup.key([
     await mfkdf.setup.factors.password('password2', { id: 'password2' })
   ]),
   await mfkdf.setup.factors.password('password3', { id: 'password3' })
-], { size: 8, threshold: 1 })
-setup.key.toString('hex') // -> 01d0c7236adf2516
+], { threshold: 1 })
+setup.key.toString('hex') // -> 01…16
 ```
 
 See [setup.factors.stack](https://mfkdf.com/docs/setup.factors.html#.stack) for more details.
@@ -237,7 +237,7 @@ const derive = await mfkdf.derive.key(setup.policy, {
     password2: mfkdf.derive.factors.password('password2')
   })
 })
-derive.key.toString('hex') // -> 01d0c7236adf2516
+derive.key.toString('hex') // -> 01…16
 ```
 
 See [derive.factors.stack](https://mfkdf.com/docs/derive.factors.html#.stack) for more details.
@@ -262,7 +262,7 @@ const policy = await mfkdf.policy.setup(
     )
   )
 )
-policy.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+policy.key.toString('hex') // -> 34…71
 ```
 
 ## Evaluate Policy-based Key
@@ -285,7 +285,7 @@ const derived = await mfkdf.policy.derive(policy.policy, {
   password1: mfkdf.derive.factors.password('password1'),
   password4: mfkdf.derive.factors.password('password4')
 })
-derived.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+derived.key.toString('hex') // -> 34…71
 ```
 
 ## Policy Logical Operators
@@ -308,14 +308,14 @@ A multi-factor derived key is only as strong as its factors. For example, a 256-
 // password-only 256-bit key
 const key1 = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('Tr0ub4dour')
-], { size: 32 })
+])
 key1.entropyBits.real // -> 16.53929514807314
 
 // password-and-hotp 256-bit key
 const key2 = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('Tr0ub4dour'),
   await mfkdf.setup.factors.hotp()
-], { size: 32 })
+])
 key2.entropyBits.real // -> 36.470863717397314
 ```
 
@@ -328,7 +328,7 @@ The library includes two measures of entropy: "theoretical" which is based on bi
 ```
 const weak = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('abcdefgh')
-], { size: 32 })
+])
 
 // High theoretical entropy due to long password
 weak.entropyBits.theoretical // -> 64
@@ -346,13 +346,13 @@ const all = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('Tr0ub4dour', { id: 'password1' }),
   await mfkdf.setup.factors.uuid(),
   await mfkdf.setup.factors.password('abcdefgh', { id: 'password2' })
-], { size: 32 })
+])
 
 const threshold = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('Tr0ub4dour', { id: 'password1' }),
   await mfkdf.setup.factors.uuid(),
   await mfkdf.setup.factors.password('abcdefgh', { id: 'password2' })
-], { size: 32, threshold: 2 })
+], { threshold: 2 })
 
 all.entropyBits.real // -> 143.5836892674316
 threshold.entropyBits.real // -> 21.583689267431595
@@ -399,8 +399,8 @@ const setup = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('password'),
   await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),
   await mfkdf.setup.factors.uuid({ uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
-], { size: 16 })
-setup.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+])
+setup.key.toString('hex') // -> 34…71
 ```
 
 Let's say the user wishes to reset their password. The multi-factor derived key can be updated to reflect the new password like so:
@@ -419,7 +419,7 @@ const derive = await mfkdf.derive.key(setup.policy, {
   hotp: mfkdf.derive.factors.hotp(365287),
   uuid: mfkdf.derive.factors.uuid('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d')
 })
-derive.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+derive.key.toString('hex') // -> 34…71
 ```
 
 Note that the key itself has not changed despite changing the factors; for example, secrets encrypted with the old key can still be decrypted with the new key (only the factors used to derive the key have changed).
@@ -447,8 +447,8 @@ const setup = await mfkdf.setup.key([
   await mfkdf.setup.factors.password('password1', { id: 'password1' }),
   await mfkdf.setup.factors.password('password2', { id: 'password2' }),
   await mfkdf.setup.factors.password('password3', { id: 'password3' })
-], { size: 8 })
-setup.key.toString('hex') // -> 64587f2a0e65dc3c
+])
+setup.key.toString('hex') // -> 64…3c
 ```
 
 Let's say that we don't want a user to need factor \#2 the next time they login. We can directly save the key material corresponding to this factor like so:
@@ -467,7 +467,7 @@ const derived = await mfkdf.derive.key(setup.policy, {
   password2: mfkdf.derive.factors.persisted(factor2),
   password3: mfkdf.derive.factors.password('password3')
 })
-derived.key.toString('hex') // -> 64587f2a0e65dc3c
+derived.key.toString('hex') // -> 64…3c
 ```
 
 One suggested use case for this technique is allowing a user to bypass their 2nd authentication factor when using a trusted device by persisting the material for that factor as a cookie on their browser.

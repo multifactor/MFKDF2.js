@@ -31,8 +31,8 @@ function mod (n, m) {
  *   hotp: mfkdf.derive.factors.hotp(365287)
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {Object} [options] - Configuration options
  * @param {string} [options.id='hotp'] - Unique identifier for this factor
@@ -50,13 +50,24 @@ function mod (n, m) {
 async function hotp (options) {
   options = Object.assign(Object.assign({}, defaults.hotp), options)
 
-  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
+  }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
-  if (!Number.isInteger(options.digits)) { throw new TypeError('digits must be an interger') }
+  if (!Number.isInteger(options.digits)) {
+    throw new TypeError('digits must be an interger')
+  }
   if (options.digits < 6) throw new RangeError('digits must be at least 6')
   if (options.digits > 8) throw new RangeError('digits must be at most 8')
-  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) { throw new RangeError('unrecognized hash function') }
-  if (!Buffer.isBuffer(options.secret) && typeof options.secret !== 'undefined') { throw new TypeError('secret must be a buffer') }
+  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) {
+    throw new RangeError('unrecognized hash function')
+  }
+  if (
+    !Buffer.isBuffer(options.secret) &&
+    typeof options.secret !== 'undefined'
+  ) {
+    throw new TypeError('secret must be a buffer')
+  }
 
   const target = await random(0, 10 ** options.digits - 1)
   const buffer = Buffer.allocUnsafe(4)
@@ -68,7 +79,9 @@ async function hotp (options) {
     data: buffer,
     entropy: Math.log2(10 ** options.digits),
     params: async ({ key }) => {
-      if (typeof options.secret === 'undefined') { options.secret = crypto.randomBytes(Buffer.byteLength(key)) }
+      if (typeof options.secret === 'undefined') {
+        options.secret = crypto.randomBytes(Buffer.byteLength(key))
+      }
 
       const code = parseInt(
         speakeasy.hotp({

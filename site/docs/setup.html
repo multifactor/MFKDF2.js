@@ -232,7 +232,7 @@
     <dt class="tag-author">Author:</dt>
     <dd class="tag-author">
         <ul>
-            <li>Vivek Nair (https://nair.me) &lt;vivek@nair.me></li>
+            <li><a href="mailto:support@multifactor.com">Multifactor</a></li>
         </ul>
     </dd>
     
@@ -860,7 +860,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="setup_key.js.html">setup/key.js</a>, <a href="setup_key.js.html#line63">line 63</a>
+        <a href="setup_key.js.html">setup/key.js</a>, <a href="setup_key.js.html#line53">line 53</a>
     </li></ul></dd>
     
 
@@ -887,7 +887,7 @@
     <dt class="tag-author">Author:</dt>
     <dd class="tag-author">
         <ul>
-            <li>Vivek Nair (https://nair.me) &lt;vivek@nair.me></li>
+            <li><a href="mailto:support@multifactor.com">Multifactor</a></li>
         </ul>
     </dd>
     
@@ -917,7 +917,7 @@
 
     <h5 class="h5-examples">Example</h5>
     
-    <pre class="prettyprint"><code>// setup 16 byte 2-of-3-factor multi-factor derived key with a password, HOTP code, and UUID recovery codeconst setup = await mfkdf.setup.key([  await mfkdf.setup.factors.password('password'),  await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),  await mfkdf.setup.factors.uuid({ id: 'recovery', uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })], {threshold: 2, size: 16})// derive key using 2 of the 3 factorsconst derive = await mfkdf.derive.key(setup.policy, {  password: mfkdf.derive.factors.password('password'),  hotp: mfkdf.derive.factors.hotp(365287)})setup.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771derive.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771</code></pre>
+    <pre class="prettyprint"><code>// setup 16 byte 2-of-3-factor multi-factor derived key with a password, HOTP code, and UUID recovery codeconst setup = await mfkdf.setup.key([  await mfkdf.setup.factors.password('password'),  await mfkdf.setup.factors.hotp({ secret: Buffer.from('hello world') }),  await mfkdf.setup.factors.uuid({ id: 'recovery', uuid: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })], {threshold: 2})// derive key using 2 of the 3 factorsconst derive = await mfkdf.derive.key(setup.policy, {  password: mfkdf.derive.factors.password('password'),  hotp: mfkdf.derive.factors.hotp(365287)})setup.key.toString('hex') // -> 34…71derive.key.toString('hex') // -> 34…71</code></pre>
 
 
 
@@ -1076,46 +1076,6 @@
 
         <tr>
             
-                <td class="name"><code>size</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>32</code>
-                
-                </td>
-            
-
-            <td class="description last">Size of derived key, in bytes</td>
-        </tr>
-
-    
-
-        <tr>
-            
                 <td class="name"><code>threshold</code></td>
             
 
@@ -1192,327 +1152,7 @@
 
         <tr>
             
-                <td class="name"><code>kdf</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>'argon2id'</code>
-                
-                </td>
-            
-
-            <td class="description last">KDF algorithm to use; hkdf, pbkdf2, bcrypt, scrypt, argon2i, argon2d, or argon2id</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>hkdfdigest</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>'sha256'</code>
-                
-                </td>
-            
-
-            <td class="description last">Hash function to use if using hkdf; one of sha1, sha256, sha384, or sha512</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>pbkdf2rounds</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>310000</code>
-                
-                </td>
-            
-
-            <td class="description last">Number of rounds to use if using pbkdf2</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>pbkdf2digest</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>'sha256'</code>
-                
-                </td>
-            
-
-            <td class="description last">Hash function to use if using pbkdf2; one of sha1, sha256, sha384, or sha512</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>bcryptrounds</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>10</code>
-                
-                </td>
-            
-
-            <td class="description last">Number of rounds to use if using bcrypt</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>scryptcost</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>16384</code>
-                
-                </td>
-            
-
-            <td class="description last">Iterations count (N) to use if using scrypt</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>scryptblocksize</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>8</code>
-                
-                </td>
-            
-
-            <td class="description last">Block size (r) to use if using scrypt</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>scryptparallelism</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>1</code>
-                
-                </td>
-            
-
-            <td class="description last">Parallelism factor (p) to use if using scrypt</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>argon2time</code></td>
+                <td class="name"><code>time</code></td>
             
 
             <td class="type">
@@ -1545,14 +1185,14 @@
                 </td>
             
 
-            <td class="description last">Iterations to use if using argon2</td>
+            <td class="description last">Argon2id iterations to use (minimum 2)</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>argon2mem</code></td>
+                <td class="name"><code>memory</code></td>
             
 
             <td class="type">
@@ -1585,47 +1225,7 @@
                 </td>
             
 
-            <td class="description last">Memory to use if using argon2</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>argon2parallelism</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    <code>1</code>
-                
-                </td>
-            
-
-            <td class="description last">Parallelism to use if using argon2</td>
+            <td class="description last">Argon2id memory to use (minimum 24576)</td>
         </tr>
 
     
@@ -1700,7 +1300,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Sun Aug 13 2023 12:58:17 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Sat May 31 2025 19:55:39 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

@@ -23,8 +23,8 @@ const zxcvbn = require('zxcvbn')
  *   question: mfkdf.derive.factors.question('Fido')
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {string} answer - The answer from which to derive an MFKDF factor
  * @returns {function(config:Object): Promise<MFKDFFactor>} Async function to generate MFKDF factor information
@@ -33,7 +33,9 @@ const zxcvbn = require('zxcvbn')
  * @memberof derive.factors
  */
 function question (answer) {
-  if (typeof answer !== 'string') { throw new TypeError('answer must be a string') }
+  if (typeof answer !== 'string') {
+    throw new TypeError('answer must be a string')
+  }
   if (answer.length === 0) throw new RangeError('answer cannot be empty')
 
   answer = answer

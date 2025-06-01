@@ -28,7 +28,7 @@ if (typeof window !== 'undefined') {
  *
  * // get 16-byte sub-key for "eth" using hkdf/sha256
  * const subkey = await key.getSubkey(16, 'eth', 'sha256')
- * subkey.toString('hex') // -> 54ad9e5acbc1c33b08a15dd79126e9c9
+ * subkey.toString('hex') // -> 54…c9
  *
  * @param {number} [size] - The size of sub-key to derive in bytes; same as base key by default
  * @param {string} [purpose=''] - Factors used to derive this key
@@ -57,7 +57,7 @@ module.exports.getSubkey = getSubkey
  *
  * // get 16-byte AES128 sub-key
  * const subkey = await key.getSymmetricKey('aes128')
- * subkey.toString('hex') // -> c985454e008e5ecc695e865d339cb2be
+ * subkey.toString('hex') // -> c9…be
  *
  * @param {string} [type='aes256'] - Type of key to generate; des, 3des, aes128, aes192, or aes256
  * @param {boolean} [auth=false] - Whether this is being used for authentication

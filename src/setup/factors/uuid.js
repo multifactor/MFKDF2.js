@@ -28,8 +28,8 @@ const {
  *   uuid: mfkdf.derive.factors.uuid('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d')
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {Object} [options] - Configuration options
  * @param {string} [options.uuid] - UUID to use for this factor; random v4 uuid default
@@ -43,12 +43,18 @@ const {
 async function uuid (options) {
   options = Object.assign(Object.assign({}, defaults.uuid), options)
 
-  if (typeof options.id !== 'string') { throw new TypeError('id must be a string') }
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
+  }
   if (options.id.length === 0) throw new RangeError('id cannot be empty')
 
   if (typeof options.uuid === 'undefined') options.uuid = uuidv4()
-  if (typeof options.uuid !== 'string') { throw new TypeError('uuid must be a string') }
-  if (!uuidValidate(options.uuid)) { throw new TypeError('uuid is not a valid uuid') }
+  if (typeof options.uuid !== 'string') {
+    throw new TypeError('uuid must be a string')
+  }
+  if (!uuidValidate(options.uuid)) {
+    throw new TypeError('uuid is not a valid uuid')
+  }
 
   return {
     type: 'uuid',

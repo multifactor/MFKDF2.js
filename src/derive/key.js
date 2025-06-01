@@ -35,8 +35,8 @@ const kdfSetup = require('../setup/kdf').kdf
  *   hotp: mfkdf.derive.factors.hotp(365287)
  * })
  *
- * setup.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
- * derive.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+ * setup.key.toString('hex') // -> 34…71
+ * derive.key.toString('hex') // -> 34…71
  *
  * @param {Object} policy - The key policy for the key being derived
  * @param {Object.<string, MFKDFFactor>} factors - Factors used to derive this key

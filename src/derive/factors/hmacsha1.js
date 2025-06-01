@@ -29,8 +29,8 @@ const crypto = require('crypto')
  *   hmacsha1: mfkdf.derive.factors.hmacsha1(response)
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {Buffer} response - HMAC-SHA1 response
  * @returns {function(config:Object): Promise<MFKDFFactor>} Async function to generate MFKDF factor information
@@ -39,7 +39,9 @@ const crypto = require('crypto')
  * @memberof derive.factors
  */
 function hmacsha1 (response) {
-  if (!Buffer.isBuffer(response)) { throw new TypeError('response must be a buffer') }
+  if (!Buffer.isBuffer(response)) {
+    throw new TypeError('response must be a buffer')
+  }
 
   return async (params) => {
     const secret = xor(

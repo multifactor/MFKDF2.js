@@ -34,8 +34,8 @@ const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
  *   hotp: mfkdf.derive.factors.hotp(365287)
  * })
  *
- * setup.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
- * derive.key.toString('hex') // -> 34d20ced439ec2f871c96ca377f25771
+ * setup.key.toString('hex') // -> 34…71
+ * derive.key.toString('hex') // -> 34…71
  *
  * @param {Array.<MFKDFFactor>} factors - Array of factors used to derive this key
  * @param {Object} [options] - Configuration options

@@ -31,7 +31,7 @@ const hash = require('hash-wasm')
  *
  * // derive key
  * const key = await mfkdf.kdf('password', 'salt', 8, config);
- * key.toString('hex') // -> 0394a2ede332c9a1
+ * key.toString('hex') // -> 03…a1
  *
  * @param {Buffer|string} input - KDF input string
  * @param {Buffer|string} salt - KDF salt string

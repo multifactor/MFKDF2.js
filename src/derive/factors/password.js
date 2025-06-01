@@ -23,8 +23,8 @@ const zxcvbn = require('zxcvbn')
  *   password: mfkdf.derive.factors.password('password')
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {string} password - The password from which to derive an MFKDF factor
  * @returns {function(config:Object): Promise<MFKDFFactor>} Async function to generate MFKDF factor information
@@ -33,7 +33,9 @@ const zxcvbn = require('zxcvbn')
  * @memberof derive.factors
  */
 function password (password) {
-  if (typeof password !== 'string') { throw new TypeError('password must be a string') }
+  if (typeof password !== 'string') {
+    throw new TypeError('password must be a string')
+  }
   if (password.length === 0) throw new RangeError('password cannot be empty')
 
   const strength = zxcvbn(password)

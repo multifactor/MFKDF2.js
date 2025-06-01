@@ -31,8 +31,8 @@ function mod (n, m) {
  *   totp: mfkdf.derive.factors.totp(528258, { time: 1650430943604 })
  * })
  *
- * setup.key.toString('hex') // -> 01d0c7236adf2516
- * derive.key.toString('hex') // -> 01d0c7236adf2516
+ * setup.key.toString('hex') // -> 01…16
+ * derive.key.toString('hex') // -> 01…16
  *
  * @param {number} code - The TOTP code from which to derive an MFKDF factor
  * @param {Object} [options] - Additional options for deriving the TOTP factor
@@ -45,7 +45,9 @@ function mod (n, m) {
 function totp (code, options = {}) {
   if (!Number.isInteger(code)) throw new TypeError('code must be an integer')
   if (typeof options.time === 'undefined') options.time = Date.now()
-  if (!Number.isInteger(options.time)) { throw new TypeError('time must be an integer') }
+  if (!Number.isInteger(options.time)) {
+    throw new TypeError('time must be an integer')
+  }
   if (options.time <= 0) throw new RangeError('time must be positive')
 
   return async (params) => {
