@@ -7,15 +7,15 @@
  *
  * @author Multifactor <support@multifactor.com>
  */
-const defaults = require('../../defaults')
-const crypto = require('crypto')
+const defaults = require("../../defaults");
+const crypto = require("crypto");
 // const xor = require("buffer-xor");
-const speakeasy = require('speakeasy')
-const random = require('random-number-csprng')
-const { encrypt } = require('../../crypt')
+const speakeasy = require("speakeasy");
+const random = require("random-number-csprng");
+const { encrypt } = require("../../crypt");
 
-function mod (n, m) {
-  return ((n % m) + m) % m
+function mod(n, m) {
+  return ((n % m) + m) % m;
 }
 
 /**
@@ -48,89 +48,95 @@ function mod (n, m) {
  * @param {number} [options.time] - Current time for TOTP; defaults to Date.now()
  * @param {number} [options.window=87600] - Maximum window between logins, in number of steps (1 month by default)
  * @param {number} [options.step=30] - TOTP step size
+ * @param {Object} [options.oracle] - Timing oracle data to use; none by default
  * @returns {MFKDFFactor} MFKDF factor information
  * @author Multifactor <support@multifactor.com>
  * @since 0.13.0
  * @async
  * @memberof setup.factors
  */
-async function totp (options) {
-  options = Object.assign(Object.assign({}, defaults.totp), options)
+async function totp(options) {
+  options = Object.assign(Object.assign({}, defaults.totp), options);
 
-  if (typeof options.id !== 'string') {
-    throw new TypeError('id must be a string')
+  if (typeof options.id !== "string") {
+    throw new TypeError("id must be a string");
   }
-  if (options.id.length === 0) throw new RangeError('id cannot be empty')
+  if (options.id.length === 0) throw new RangeError("id cannot be empty");
   if (!Number.isInteger(options.digits)) {
-    throw new TypeError('digits must be an interger')
+    throw new TypeError("digits must be an interger");
   }
-  if (options.digits < 6) throw new RangeError('digits must be at least 6')
-  if (options.digits > 8) throw new RangeError('digits must be at most 8')
+  if (options.digits < 6) throw new RangeError("digits must be at least 6");
+  if (options.digits > 8) throw new RangeError("digits must be at most 8");
   if (!Number.isInteger(options.step)) {
-    throw new TypeError('step must be an interger')
+    throw new TypeError("step must be an interger");
   }
-  if (options.step < 0) throw new RangeError('step must be positive')
+  if (options.step < 0) throw new RangeError("step must be positive");
   if (!Number.isInteger(options.window)) {
-    throw new TypeError('window must be an interger')
+    throw new TypeError("window must be an interger");
   }
-  if (options.window < 0) throw new RangeError('window must be positive')
-  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) {
-    throw new RangeError('unrecognized hash function')
+  if (options.window < 0) throw new RangeError("window must be positive");
+  if (!["sha1", "sha256", "sha512"].includes(options.hash)) {
+    throw new RangeError("unrecognized hash function");
   }
   if (
     !Buffer.isBuffer(options.secret) &&
-    typeof options.secret !== 'undefined'
+    typeof options.secret !== "undefined"
   ) {
-    throw new TypeError('secret must be a buffer')
+    throw new TypeError("secret must be a buffer");
   }
-  if (typeof options.time === 'undefined') options.time = Date.now()
+  if (typeof options.time === "undefined") options.time = Date.now();
   if (!Number.isInteger(options.time)) {
-    throw new TypeError('time must be an integer')
+    throw new TypeError("time must be an integer");
   }
-  if (options.time <= 0) throw new RangeError('time must be positive')
+  if (options.time <= 0) throw new RangeError("time must be positive");
 
-  const target = await random(0, 10 ** options.digits - 1)
-  const buffer = Buffer.allocUnsafe(4)
-  buffer.writeUInt32BE(target, 0)
+  const target = await random(0, 10 ** options.digits - 1);
+  const buffer = Buffer.allocUnsafe(4);
+  buffer.writeUInt32BE(target, 0);
 
   return {
-    type: 'totp',
+    type: "totp",
     id: options.id,
     data: buffer,
     entropy: Math.log2(10 ** options.digits),
     params: async ({ key }) => {
-      if (typeof options.secret === 'undefined') {
-        options.secret = crypto.randomBytes(Buffer.byteLength(key))
+      if (typeof options.secret === "undefined") {
+        options.secret = crypto.randomBytes(Buffer.byteLength(key));
       }
 
-      const time = options.time
-      const offsets = Buffer.allocUnsafe(4 * options.window)
+      const time = options.time;
+      const offsets = Buffer.allocUnsafe(4 * options.window);
 
       for (let i = 0; i < options.window; i++) {
-        const counter = Math.floor(time / (options.step * 1000)) + i
+        const counter = Math.floor(time / (options.step * 1000)) + i;
 
         const code = parseInt(
           speakeasy.totp({
-            secret: options.secret.toString('hex'),
-            encoding: 'hex',
+            secret: options.secret.toString("hex"),
+            encoding: "hex",
             step: options.step,
             counter,
             algorithm: options.hash,
-            digits: options.digits
+            digits: options.digits,
           })
-        )
+        );
 
-        const offset = mod(target - code, 10 ** options.digits)
+        let offset = mod(target - code, 10 ** options.digits);
 
-        offsets.writeUInt32BE(offset, 4 * i)
+        if (options.oracle) {
+          const time = counter * options.step * 1000;
+          offset = mod(offset - options.oracle[time], 10 ** options.digits);
+        }
+
+        offsets.writeUInt32BE(offset, 4 * i);
       }
 
-      const padding = options.secret.length % 16
+      const padding = options.secret.length % 16;
       const padded = Buffer.concat([
         options.secret,
-        crypto.randomBytes(16 - padding)
-      ])
-      const pad = encrypt(padded, key)
+        crypto.randomBytes(16 - padding),
+      ]);
+      const pad = encrypt(padded, key);
 
       return {
         start: time,
@@ -140,13 +146,13 @@ async function totp (options) {
         window: options.window,
         pad,
         secretSize: options.secret.length,
-        offsets: offsets.toString('base64')
-      }
+        offsets: offsets.toString("base64"),
+      };
     },
     output: async () => {
       return {
-        scheme: 'otpauth',
-        type: 'totp',
+        scheme: "otpauth",
+        type: "totp",
         label: options.label,
         secret: options.secret,
         issuer: options.issuer,
@@ -154,17 +160,17 @@ async function totp (options) {
         digits: options.digits,
         period: options.step,
         uri: speakeasy.otpauthURL({
-          secret: options.secret.toString('hex'),
-          encoding: 'hex',
+          secret: options.secret.toString("hex"),
+          encoding: "hex",
           label: options.label,
-          type: 'totp',
+          type: "totp",
           issuer: options.issuer,
           algorithm: options.hash,
           digits: options.digits,
-          period: options.step
-        })
-      }
-    }
-  }
+          period: options.step,
+        }),
+      };
+    },
+  };
 }
-module.exports.totp = totp
+module.exports.totp = totp;

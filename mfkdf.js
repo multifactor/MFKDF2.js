@@ -99303,11 +99303,11 @@ module.exports.stack = stack
  * @author Multifactor <support@multifactor.com>
  */
 // const xor = require("buffer-xor");
-const speakeasy = __webpack_require__(6881)
-const { decrypt } = __webpack_require__(1841)
+const speakeasy = __webpack_require__(6881);
+const { decrypt } = __webpack_require__(1841);
 
-function mod (n, m) {
-  return ((n % m) + m) % m
+function mod(n, m) {
+  return ((n % m) + m) % m;
 }
 
 /**
@@ -99333,64 +99333,75 @@ function mod (n, m) {
  * @param {number} code - The TOTP code from which to derive an MFKDF factor
  * @param {Object} [options] - Additional options for deriving the TOTP factor
  * @param {number} [options.time] - Current time for TOTP; defaults to Date.now()
+ * @param {Object} [options.oracle] - Timing oracle data to use; none by default
  * @returns {function(config:Object): Promise<MFKDFFactor>} Async function to generate MFKDF factor information
  * @author Multifactor <support@multifactor.com>
  * @since 0.13.0
  * @memberof derive.factors
  */
-function totp (code, options = {}) {
-  if (!Number.isInteger(code)) throw new TypeError('code must be an integer')
-  if (typeof options.time === 'undefined') options.time = Date.now()
+function totp(code, options = {}) {
+  if (!Number.isInteger(code)) throw new TypeError("code must be an integer");
+  if (typeof options.time === "undefined") options.time = Date.now();
   if (!Number.isInteger(options.time)) {
-    throw new TypeError('time must be an integer')
+    throw new TypeError("time must be an integer");
   }
-  if (options.time <= 0) throw new RangeError('time must be positive')
+  if (options.time <= 0) throw new RangeError("time must be positive");
 
   return async (params) => {
-    const offsets = Buffer.from(params.offsets, 'base64')
-    const startCounter = Math.floor(params.start / (params.step * 1000))
-    const nowCounter = Math.floor(options.time / (params.step * 1000))
+    const offsets = Buffer.from(params.offsets, "base64");
+    const startCounter = Math.floor(params.start / (params.step * 1000));
+    const nowCounter = Math.floor(options.time / (params.step * 1000));
 
-    const index = nowCounter - startCounter
+    const index = nowCounter - startCounter;
 
-    if (index >= params.window) throw new RangeError('TOTP window exceeded')
+    if (index >= params.window) throw new RangeError("TOTP window exceeded");
 
-    const offset = offsets.readUInt32BE(4 * index)
+    var offset = offsets.readUInt32BE(4 * index);
 
-    const target = mod(offset + code, 10 ** params.digits)
-    const buffer = Buffer.allocUnsafe(4)
-    buffer.writeUInt32BE(target, 0)
+    if (options.oracle) {
+      const time = nowCounter * params.step * 1000;
+      offset = mod(offset + options.oracle[time], 10 ** params.digits);
+    }
+
+    const target = mod(offset + code, 10 ** params.digits);
+    const buffer = Buffer.allocUnsafe(4);
+    buffer.writeUInt32BE(target, 0);
 
     return {
-      type: 'totp',
+      type: "totp",
       data: buffer,
       params: async ({ key }) => {
-        const pad = Buffer.from(params.pad, 'base64')
+        const pad = Buffer.from(params.pad, "base64");
         // const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
-        const secret = decrypt(pad, key).slice(0, params.secretSize)
+        const secret = decrypt(pad, key).slice(0, params.secretSize);
 
-        const time = options.time
-        const newOffsets = Buffer.allocUnsafe(4 * params.window)
+        const time = options.time;
+        const newOffsets = Buffer.allocUnsafe(4 * params.window);
 
-        offsets.copy(newOffsets, 0, 4 * index)
+        offsets.copy(newOffsets, 0, 4 * index);
 
         for (let i = params.window - index; i < params.window; i++) {
-          const counter = Math.floor(time / (params.step * 1000)) + i
+          const counter = Math.floor(time / (params.step * 1000)) + i;
 
           const code = parseInt(
             speakeasy.totp({
-              secret: secret.toString('hex'),
-              encoding: 'hex',
+              secret: secret.toString("hex"),
+              encoding: "hex",
               step: params.step,
               counter,
               algorithm: params.hash,
-              digits: params.digits
+              digits: params.digits,
             })
-          )
+          );
 
-          const offset = mod(target - code, 10 ** params.digits)
+          var offset = mod(target - code, 10 ** params.digits);
 
-          newOffsets.writeUInt32BE(offset, 4 * i)
+          if (options.oracle) {
+            const time = counter * params.step * 1000;
+            offset = mod(offset - options.oracle[time], 10 ** params.digits);
+          }
+
+          newOffsets.writeUInt32BE(offset, 4 * i);
         }
 
         return {
@@ -99401,16 +99412,16 @@ function totp (code, options = {}) {
           window: params.window,
           pad: params.pad,
           secretSize: params.secretSize,
-          offsets: newOffsets.toString('base64')
-        }
+          offsets: newOffsets.toString("base64"),
+        };
       },
       output: async () => {
-        return {}
-      }
-    }
-  }
+        return {};
+      },
+    };
+  };
 }
-module.exports.totp = totp
+module.exports.totp = totp;
 
 
 /***/ }),
@@ -101699,15 +101710,15 @@ module.exports.stack = stack
  *
  * @author Multifactor <support@multifactor.com>
  */
-const defaults = __webpack_require__(9930)
-const crypto = __webpack_require__(5835)
+const defaults = __webpack_require__(9930);
+const crypto = __webpack_require__(5835);
 // const xor = require("buffer-xor");
-const speakeasy = __webpack_require__(6881)
-const random = __webpack_require__(8382)
-const { encrypt } = __webpack_require__(1841)
+const speakeasy = __webpack_require__(6881);
+const random = __webpack_require__(8382);
+const { encrypt } = __webpack_require__(1841);
 
-function mod (n, m) {
-  return ((n % m) + m) % m
+function mod(n, m) {
+  return ((n % m) + m) % m;
 }
 
 /**
@@ -101740,89 +101751,95 @@ function mod (n, m) {
  * @param {number} [options.time] - Current time for TOTP; defaults to Date.now()
  * @param {number} [options.window=87600] - Maximum window between logins, in number of steps (1 month by default)
  * @param {number} [options.step=30] - TOTP step size
+ * @param {Object} [options.oracle] - Timing oracle data to use; none by default
  * @returns {MFKDFFactor} MFKDF factor information
  * @author Multifactor <support@multifactor.com>
  * @since 0.13.0
  * @async
  * @memberof setup.factors
  */
-async function totp (options) {
-  options = Object.assign(Object.assign({}, defaults.totp), options)
+async function totp(options) {
+  options = Object.assign(Object.assign({}, defaults.totp), options);
 
-  if (typeof options.id !== 'string') {
-    throw new TypeError('id must be a string')
+  if (typeof options.id !== "string") {
+    throw new TypeError("id must be a string");
   }
-  if (options.id.length === 0) throw new RangeError('id cannot be empty')
+  if (options.id.length === 0) throw new RangeError("id cannot be empty");
   if (!Number.isInteger(options.digits)) {
-    throw new TypeError('digits must be an interger')
+    throw new TypeError("digits must be an interger");
   }
-  if (options.digits < 6) throw new RangeError('digits must be at least 6')
-  if (options.digits > 8) throw new RangeError('digits must be at most 8')
+  if (options.digits < 6) throw new RangeError("digits must be at least 6");
+  if (options.digits > 8) throw new RangeError("digits must be at most 8");
   if (!Number.isInteger(options.step)) {
-    throw new TypeError('step must be an interger')
+    throw new TypeError("step must be an interger");
   }
-  if (options.step < 0) throw new RangeError('step must be positive')
+  if (options.step < 0) throw new RangeError("step must be positive");
   if (!Number.isInteger(options.window)) {
-    throw new TypeError('window must be an interger')
+    throw new TypeError("window must be an interger");
   }
-  if (options.window < 0) throw new RangeError('window must be positive')
-  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) {
-    throw new RangeError('unrecognized hash function')
+  if (options.window < 0) throw new RangeError("window must be positive");
+  if (!["sha1", "sha256", "sha512"].includes(options.hash)) {
+    throw new RangeError("unrecognized hash function");
   }
   if (
     !Buffer.isBuffer(options.secret) &&
-    typeof options.secret !== 'undefined'
+    typeof options.secret !== "undefined"
   ) {
-    throw new TypeError('secret must be a buffer')
+    throw new TypeError("secret must be a buffer");
   }
-  if (typeof options.time === 'undefined') options.time = Date.now()
+  if (typeof options.time === "undefined") options.time = Date.now();
   if (!Number.isInteger(options.time)) {
-    throw new TypeError('time must be an integer')
+    throw new TypeError("time must be an integer");
   }
-  if (options.time <= 0) throw new RangeError('time must be positive')
+  if (options.time <= 0) throw new RangeError("time must be positive");
 
-  const target = await random(0, 10 ** options.digits - 1)
-  const buffer = Buffer.allocUnsafe(4)
-  buffer.writeUInt32BE(target, 0)
+  const target = await random(0, 10 ** options.digits - 1);
+  const buffer = Buffer.allocUnsafe(4);
+  buffer.writeUInt32BE(target, 0);
 
   return {
-    type: 'totp',
+    type: "totp",
     id: options.id,
     data: buffer,
     entropy: Math.log2(10 ** options.digits),
     params: async ({ key }) => {
-      if (typeof options.secret === 'undefined') {
-        options.secret = crypto.randomBytes(Buffer.byteLength(key))
+      if (typeof options.secret === "undefined") {
+        options.secret = crypto.randomBytes(Buffer.byteLength(key));
       }
 
-      const time = options.time
-      const offsets = Buffer.allocUnsafe(4 * options.window)
+      const time = options.time;
+      const offsets = Buffer.allocUnsafe(4 * options.window);
 
       for (let i = 0; i < options.window; i++) {
-        const counter = Math.floor(time / (options.step * 1000)) + i
+        const counter = Math.floor(time / (options.step * 1000)) + i;
 
         const code = parseInt(
           speakeasy.totp({
-            secret: options.secret.toString('hex'),
-            encoding: 'hex',
+            secret: options.secret.toString("hex"),
+            encoding: "hex",
             step: options.step,
             counter,
             algorithm: options.hash,
-            digits: options.digits
+            digits: options.digits,
           })
-        )
+        );
 
-        const offset = mod(target - code, 10 ** options.digits)
+        let offset = mod(target - code, 10 ** options.digits);
 
-        offsets.writeUInt32BE(offset, 4 * i)
+        if (options.oracle) {
+          const time = counter * options.step * 1000;
+          offset = mod(offset - options.oracle[time], 10 ** options.digits);
+        }
+
+        offsets.writeUInt32BE(offset, 4 * i);
       }
 
-      const padding = options.secret.length % 16
+      const padding = options.secret.length % 16;
       const padded = Buffer.concat([
         options.secret,
-        crypto.randomBytes(16 - padding)
-      ])
-      const pad = encrypt(padded, key)
+        crypto.randomBytes(16 - padding),
+      ]);
+      const pad = encrypt(padded, key);
 
       return {
         start: time,
@@ -101832,13 +101849,13 @@ async function totp (options) {
         window: options.window,
         pad,
         secretSize: options.secret.length,
-        offsets: offsets.toString('base64')
-      }
+        offsets: offsets.toString("base64"),
+      };
     },
     output: async () => {
       return {
-        scheme: 'otpauth',
-        type: 'totp',
+        scheme: "otpauth",
+        type: "totp",
         label: options.label,
         secret: options.secret,
         issuer: options.issuer,
@@ -101846,20 +101863,20 @@ async function totp (options) {
         digits: options.digits,
         period: options.step,
         uri: speakeasy.otpauthURL({
-          secret: options.secret.toString('hex'),
-          encoding: 'hex',
+          secret: options.secret.toString("hex"),
+          encoding: "hex",
           label: options.label,
-          type: 'totp',
+          type: "totp",
           issuer: options.issuer,
           algorithm: options.hash,
           digits: options.digits,
-          period: options.step
-        })
-      }
-    }
-  }
+          period: options.step,
+        }),
+      };
+    },
+  };
 }
-module.exports.totp = totp
+module.exports.totp = totp;
 
 
 /***/ }),
