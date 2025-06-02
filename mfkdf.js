@@ -98159,9 +98159,10 @@ module.exports.persistFactor = persistFactor
  */
 
 const { hkdf } = __webpack_require__(8213)
-const xor = __webpack_require__(7295)
+// const xor = require("buffer-xor");
 const share = (__webpack_require__(5080).share)
 const crypto = __webpack_require__(5835)
+const { encrypt, decrypt } = __webpack_require__(1841)
 
 /**
  * Change the threshold of factors needed to derive a multi-factor derived key
@@ -98468,11 +98469,15 @@ async function reconstitute (
   const data = {}
 
   // add existing factors
-  for (const [index, factor] of this.policy.factors.entries()) {
+  for (const factor of this.policy.factors.values()) {
     factors[factor.id] = factor
-    const pad = Buffer.from(factor.pad, 'base64')
-    const share = this.shares[index]
-    const factorMaterial = xor(pad, share)
+    // const pad = Buffer.from(factor.pad, 'base64')
+    // const share = this.shares[index]
+    // const factorMaterial = xor(pad, share);
+    const factorMaterial = decrypt(
+      Buffer.from(factor.secret, 'base64'),
+      this.key
+    )
     // No longer needed in MFKDF2
     // if (Buffer.byteLength(factorMaterial) > 32) {
     //   factorMaterial = factorMaterial.subarray(
@@ -98571,7 +98576,9 @@ async function reconstitute (
     //   ]);
     // }
 
-    factor.pad = xor(share, stretched).toString('base64')
+    // factor.pad = xor(share, stretched).toString("base64");
+    factor.pad = encrypt(share, stretched).toString('base64')
+    factor.secret = encrypt(stretched, this.key).toString('base64')
     factor.salt = factor.salt ? factor.salt : salt
     newFactors.push(factor)
   }
@@ -98582,6 +98589,29 @@ async function reconstitute (
   this.shares = shares
 }
 module.exports.reconstitute = reconstitute
+
+
+/***/ }),
+
+/***/ 1841:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+/* provided dependency */ var Buffer = __webpack_require__(8764)["Buffer"];
+const crypto = __webpack_require__(5835)
+
+function encrypt (data, key) {
+  const cipher = crypto.createCipheriv('AES-256-ECB', key, null)
+  cipher.setAutoPadding(false)
+  return Buffer.concat([cipher.update(data), cipher.final()])
+}
+
+function decrypt (data, key) {
+  const decipher = crypto.createDecipheriv('AES-256-ECB', key, null)
+  decipher.setAutoPadding(false)
+  return Buffer.concat([decipher.update(data), decipher.final()])
+}
+
+module.exports = { encrypt, decrypt }
 
 
 /***/ }),
@@ -98759,8 +98789,9 @@ module.exports.hmacsha1 = hmacsha1
  *
  * @author Multifactor <support@multifactor.com>
  */
-const xor = __webpack_require__(7295)
+// const xor = require('buffer-xor')
 const speakeasy = __webpack_require__(6881)
+const { decrypt } = __webpack_require__(1841)
 
 function mod (n, m) {
   return ((n % m) + m) % m
@@ -98802,7 +98833,8 @@ function hotp (code) {
       data: buffer,
       params: async ({ key }) => {
         const pad = Buffer.from(params.pad, 'base64')
-        const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
+        // const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
+        const secret = decrypt(pad, key).slice(0, params.secretSize)
 
         const code = parseInt(
           speakeasy.hotp({
@@ -98820,6 +98852,7 @@ function hotp (code) {
           hash: params.hash,
           digits: params.digits,
           pad: params.pad,
+          secretSize: params.secretSize,
           counter: params.counter + 1,
           offset
         }
@@ -99245,8 +99278,9 @@ module.exports.stack = stack
  *
  * @author Multifactor <support@multifactor.com>
  */
-const xor = __webpack_require__(7295)
+// const xor = require("buffer-xor");
 const speakeasy = __webpack_require__(6881)
+const { decrypt } = __webpack_require__(1841)
 
 function mod (n, m) {
   return ((n % m) + m) % m
@@ -99308,7 +99342,8 @@ function totp (code, options = {}) {
       data: buffer,
       params: async ({ key }) => {
         const pad = Buffer.from(params.pad, 'base64')
-        const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
+        // const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
+        const secret = decrypt(pad, key).slice(0, params.secretSize)
 
         const time = options.time
         const newOffsets = Buffer.allocUnsafe(4 * params.window)
@@ -99341,6 +99376,7 @@ function totp (code, options = {}) {
           step: params.step,
           window: params.window,
           pad: params.pad,
+          secretSize: params.secretSize,
           offsets: newOffsets.toString('base64')
         }
       },
@@ -99451,9 +99487,10 @@ const combine = (__webpack_require__(1719).combine)
 const recover = (__webpack_require__(6797).recover)
 const kdf = (__webpack_require__(4861).kdf)
 const { hkdf } = __webpack_require__(8213)
-const xor = __webpack_require__(7295)
+// const xor = require("buffer-xor");
 const MFKDFDerivedKey = __webpack_require__(8310)
 const kdfSetup = (__webpack_require__(6336).kdf)
+const { decrypt } = __webpack_require__(1841)
 
 /**
  * Derive a key from multiple factors of input
@@ -99516,6 +99553,7 @@ async function key (policy, factors, options) {
         const stretched = Buffer.from(
           await hkdf('sha256', material.data, factor.salt, '', 32)
         )
+
         // No longer needed in MFKDF2
         // if (Buffer.byteLength(pad) > 32) {
         //   stretched = Buffer.concat([
@@ -99524,7 +99562,15 @@ async function key (policy, factors, options) {
         //   ])
         // }
 
-        share = xor(pad, stretched)
+        // share = xor(pad, stretched)
+        // const decipher = crypto.createDecipheriv(
+        //   'AES-256-ECB',
+        //   stretched,
+        //   null
+        // )
+        // decipher.setAutoPadding(false)
+        // share = Buffer.concat([decipher.update(pad), decipher.final()])
+        share = decrypt(pad, stretched)
       }
 
       shares.push(share)
@@ -101086,9 +101132,10 @@ module.exports.hmacsha1 = hmacsha1
  */
 const defaults = __webpack_require__(9930)
 const crypto = __webpack_require__(5835)
-const xor = __webpack_require__(7295)
+// const xor = require("buffer-xor");
 const speakeasy = __webpack_require__(6881)
 const random = __webpack_require__(8382)
+const { encrypt } = __webpack_require__(1841)
 
 function mod (n, m) {
   return ((n % m) + m) % m
@@ -101172,13 +101219,18 @@ async function hotp (options) {
 
       const offset = mod(target - code, 10 ** options.digits)
 
+      const padding = options.secret.length % 16
+      const padded = Buffer.concat([
+        options.secret,
+        crypto.randomBytes(16 - padding)
+      ])
+      const pad = encrypt(padded, key)
+
       return {
         hash: options.hash,
         digits: options.digits,
-        pad: xor(
-          options.secret,
-          key.slice(0, Buffer.byteLength(options.secret))
-        ).toString('base64'),
+        pad,
+        secretSize: options.secret.length,
         counter: 1,
         offset
       }
@@ -101617,9 +101669,10 @@ module.exports.stack = stack
  */
 const defaults = __webpack_require__(9930)
 const crypto = __webpack_require__(5835)
-const xor = __webpack_require__(7295)
+// const xor = require("buffer-xor");
 const speakeasy = __webpack_require__(6881)
 const random = __webpack_require__(8382)
+const { encrypt } = __webpack_require__(1841)
 
 function mod (n, m) {
   return ((n % m) + m) % m
@@ -101732,16 +101785,21 @@ async function totp (options) {
         offsets.writeUInt32BE(offset, 4 * i)
       }
 
+      const padding = options.secret.length % 16
+      const padded = Buffer.concat([
+        options.secret,
+        crypto.randomBytes(16 - padding)
+      ])
+      const pad = encrypt(padded, key)
+
       return {
         start: time,
         hash: options.hash,
         digits: options.digits,
         step: options.step,
         window: options.window,
-        pad: xor(
-          options.secret,
-          key.slice(0, Buffer.byteLength(options.secret))
-        ).toString('base64'),
+        pad,
+        secretSize: options.secret.length,
         offsets: offsets.toString('base64')
       }
     },
@@ -102060,8 +102118,9 @@ const crypto = __webpack_require__(5835)
 const { v4: uuidv4 } = __webpack_require__(1614)
 const { hkdf } = __webpack_require__(8213)
 const share = (__webpack_require__(5080).share)
-const xor = __webpack_require__(7295)
+// const xor = require('buffer-xor')
 const MFKDFDerivedKey = __webpack_require__(8310)
+const { encrypt } = __webpack_require__(1841)
 
 /**
  * Validate and setup a configuration for a multi-factor derived key
@@ -102219,7 +102278,13 @@ async function key (factors, options) {
     //   ])
     // }
 
-    const pad = xor(share, stretched)
+    // const pad = xor(share, stretched);
+    // const cipher = crypto.createCipheriv('AES-256-ECB', stretched, null)
+    // cipher.setAutoPadding(false)
+    // const pad = Buffer.concat([cipher.update(share), cipher.final()])
+    const pad = encrypt(share, stretched)
+    const secret = encrypt(stretched, key)
+
     const params = await factor.params({ key })
     outputs[factor.id] = await factor.output()
     policy.factors.push({
@@ -102227,7 +102292,8 @@ async function key (factors, options) {
       type: factor.type,
       pad: pad.toString('base64'),
       params,
-      salt
+      salt,
+      secret: secret.toString('base64')
     })
   }
 
@@ -102707,7 +102773,7 @@ module.exports = JSON.parse('{"2.16.840.1.101.3.4.1.1":"aes-128-ecb","2.16.840.1
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"$schema":"http://json-schema.org/draft-07/schema","$id":"https://mfkdf.com/schema/v2.0.0/policy.json","type":"object","title":"Multi-Factor Derived Key Policy Schema","description":"A multi-factor derived key policy defines the factors and methods used to derive a key via multi-factor key derivation.","required":["threshold","salt","factors","$id","$schema"],"properties":{"$schema":{"type":"string","title":"Key Schema","description":"Link to the version of the schema that can validate the key policy."},"$id":{"type":"string","title":"Key ID","description":"String which uniquely identifies this key."},"threshold":{"type":"integer","title":"Factor Threshold","description":"The number of correct factors needed to derive this key."},"salt":{"type":"string","title":"KDF Salt","description":"Base-64 encoded salt value used as additional input to the KDF."},"factors":{"type":"array","title":"Factors","description":"Factors which can be used to derive this key.","items":{"type":"object","title":"Factor","description":"Factor which can be used to derive this key.","required":["id","type","pad","salt","params"],"properties":{"id":{"type":"string","title":"Factor ID","description":"String which uniquely identifies this factor."},"type":{"type":"string","title":"Factor Type","description":"Name of the factor material function to use."},"pad":{"type":"string","title":"Factor Pad","description":"Base-64 encoded intermediate value to combine with factor material."},"salt":{"type":"string","title":"Factor Salt","description":"Base-64 encoded intermediate value to combine with factor material."},"params":{"type":"object","title":"Factor Parameters","description":"Parameters required by chosen factor material function.","required":[]}}}},"secrets":{"type":"array","title":"Secrets","description":"Enveloped secrets encrypted with this key.","items":{"type":"object","title":"Factor","description":"Enveloped secret encrypted with this key.","required":["id","type","value"],"properties":{"id":{"type":"string","title":"Secret ID","description":"String which uniquely identifies this enveloped secret."},"type":{"type":"string","title":"Secret Type","description":"Type of enveloped secret."},"value":{"type":"string","title":"Secret Value","description":"Base-64 encoded ciphertext value encrypted with this key."}}}}}}');
+module.exports = JSON.parse('{"$schema":"http://json-schema.org/draft-07/schema","$id":"https://mfkdf.com/schema/v2.0.0/policy.json","type":"object","title":"Multi-Factor Derived Key Policy Schema","description":"A multi-factor derived key policy defines the factors and methods used to derive a key via multi-factor key derivation.","required":["threshold","salt","factors","$id","$schema"],"properties":{"$schema":{"type":"string","title":"Key Schema","description":"Link to the version of the schema that can validate the key policy."},"$id":{"type":"string","title":"Key ID","description":"String which uniquely identifies this key."},"threshold":{"type":"integer","title":"Factor Threshold","description":"The number of correct factors needed to derive this key."},"salt":{"type":"string","title":"KDF Salt","description":"Base-64 encoded salt value used as additional input to the KDF."},"factors":{"type":"array","title":"Factors","description":"Factors which can be used to derive this key.","items":{"type":"object","title":"Factor","description":"Factor which can be used to derive this key.","required":["id","type","pad","salt","params"],"properties":{"id":{"type":"string","title":"Factor ID","description":"String which uniquely identifies this factor."},"type":{"type":"string","title":"Factor Type","description":"Name of the factor material function to use."},"pad":{"type":"string","title":"Factor Pad","description":"Base-64 encoded intermediate value to combine with factor material."},"salt":{"type":"string","title":"Factor Salt","description":"Base-64 encoded intermediate value to combine with factor material."},"secret":{"type":"string","title":"Factor Secret","description":"Base-64 encrypted factor secret value used to reconstitute key."},"params":{"type":"object","title":"Factor Parameters","description":"Parameters required by chosen factor material function.","required":[]}}}},"secrets":{"type":"array","title":"Secrets","description":"Enveloped secrets encrypted with this key.","items":{"type":"object","title":"Factor","description":"Enveloped secret encrypted with this key.","required":["id","type","value"],"properties":{"id":{"type":"string","title":"Secret ID","description":"String which uniquely identifies this enveloped secret."},"type":{"type":"string","title":"Secret Type","description":"Type of enveloped secret."},"value":{"type":"string","title":"Secret Value","description":"Base-64 encoded ciphertext value encrypted with this key."}}}}}}');
 
 /***/ })
 

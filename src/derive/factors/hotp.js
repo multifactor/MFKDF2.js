@@ -7,8 +7,9 @@
  *
  * @author Multifactor <support@multifactor.com>
  */
-const xor = require('buffer-xor')
+// const xor = require('buffer-xor')
 const speakeasy = require('speakeasy')
+const { decrypt } = require('../../crypt')
 
 function mod (n, m) {
   return ((n % m) + m) % m
@@ -50,7 +51,8 @@ function hotp (code) {
       data: buffer,
       params: async ({ key }) => {
         const pad = Buffer.from(params.pad, 'base64')
-        const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
+        // const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
+        const secret = decrypt(pad, key).slice(0, params.secretSize)
 
         const code = parseInt(
           speakeasy.hotp({
@@ -68,6 +70,7 @@ function hotp (code) {
           hash: params.hash,
           digits: params.digits,
           pad: params.pad,
+          secretSize: params.secretSize,
           counter: params.counter + 1,
           offset
         }

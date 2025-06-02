@@ -158,4 +158,49 @@ suite('mfkdf2/security', () => {
       sharep1.should.not.equal(sharep3)
     })
   })
+
+  suite('factor-secret-encryption', () => {
+    test('hotp', async () => {
+      const setup = await mfkdf.setup.key([
+        await mfkdf.setup.factors.hotp({
+          secret: Buffer.from('hello world')
+        })
+      ])
+
+      const recover = xor(
+        Buffer.from(setup.policy.factors[0].params.pad, 'base64'),
+        Buffer.from('hello world')
+      ).toString('hex')
+      const key = setup.key.toString('hex').slice(0, recover.length)
+      recover.should.not.equal(key)
+
+      const derive1 = await mfkdf.derive.key(setup.policy, {
+        hotp: mfkdf.derive.factors.hotp(365287)
+      })
+
+      setup.key.toString('hex').should.equal(derive1.key.toString('hex'))
+    })
+  })
+
+  test('totp', async () => {
+    const setup = await mfkdf.setup.key([
+      await mfkdf.setup.factors.totp({
+        secret: Buffer.from('hello world'),
+        time: 1650430806597
+      })
+    ])
+
+    const recover = xor(
+      Buffer.from(setup.policy.factors[0].params.pad, 'base64'),
+      Buffer.from('hello world')
+    ).toString('hex')
+    const key = setup.key.toString('hex').slice(0, recover.length)
+    recover.should.not.equal(key)
+
+    const derive1 = await mfkdf.derive.key(setup.policy, {
+      totp: mfkdf.derive.factors.totp(528258, { time: 1650430943604 })
+    })
+
+    setup.key.toString('hex').should.equal(derive1.key.toString('hex'))
+  })
 })

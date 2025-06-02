@@ -9,9 +9,10 @@
  */
 const defaults = require('../../defaults')
 const crypto = require('crypto')
-const xor = require('buffer-xor')
+// const xor = require("buffer-xor");
 const speakeasy = require('speakeasy')
 const random = require('random-number-csprng')
+const { encrypt } = require('../../crypt')
 
 function mod (n, m) {
   return ((n % m) + m) % m
@@ -95,13 +96,18 @@ async function hotp (options) {
 
       const offset = mod(target - code, 10 ** options.digits)
 
+      const padding = options.secret.length % 16
+      const padded = Buffer.concat([
+        options.secret,
+        crypto.randomBytes(16 - padding)
+      ])
+      const pad = encrypt(padded, key)
+
       return {
         hash: options.hash,
         digits: options.digits,
-        pad: xor(
-          options.secret,
-          key.slice(0, Buffer.byteLength(options.secret))
-        ).toString('base64'),
+        pad,
+        secretSize: options.secret.length,
         counter: 1,
         offset
       }
