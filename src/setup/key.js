@@ -179,9 +179,17 @@ async function key (factors, options) {
     // cipher.setAutoPadding(false)
     // const pad = Buffer.concat([cipher.update(share), cipher.final()])
     const pad = encrypt(share, stretched)
-    const secret = encrypt(stretched, key)
 
-    const params = await factor.params({ key })
+    const factorKey = await hkdf(
+      'sha256',
+      key,
+      salt,
+      'mfkdf2:factor:' + factor.id,
+      32
+    )
+    const secret = encrypt(stretched, factorKey)
+
+    const params = await factor.params({ key: factorKey })
     outputs[factor.id] = await factor.output()
     policy.factors.push({
       id: factor.id,

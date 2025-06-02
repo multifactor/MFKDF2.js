@@ -135,7 +135,15 @@ async function key (policy, factors, options) {
 
   for (const [index, factor] of newFactors.entries()) {
     if (typeof factor === 'function') {
-      newPolicy.factors[index].params = await factor({ key })
+      const factorKey = await hkdf(
+        'sha256',
+        key,
+        newPolicy.factors[index].salt,
+        'mfkdf2:factor:' + newPolicy.factors[index].id,
+        32
+      )
+
+      newPolicy.factors[index].params = await factor({ key: factorKey })
     }
   }
 

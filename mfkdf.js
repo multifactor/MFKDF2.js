@@ -98474,9 +98474,16 @@ async function reconstitute (
     // const pad = Buffer.from(factor.pad, 'base64')
     // const share = this.shares[index]
     // const factorMaterial = xor(pad, share);
+    const factorKey = await hkdf(
+      'sha256',
+      this.key,
+      factor.salt,
+      'mfkdf2:factor:' + factor.id,
+      32
+    )
     const factorMaterial = decrypt(
       Buffer.from(factor.secret, 'base64'),
-      this.key
+      factorKey
     )
     // No longer needed in MFKDF2
     // if (Buffer.byteLength(factorMaterial) > 32) {
@@ -98535,10 +98542,21 @@ async function reconstitute (
       throw new TypeError('factor output must be a function')
     }
 
+    const salt = crypto.randomBytes(32).toString('base64')
+
+    const factorKey = await hkdf(
+      'sha256',
+      this.key,
+      salt,
+      'mfkdf2:factor:' + factor.id,
+      32
+    )
+
     factors[factor.id] = {
       id: factor.id,
       type: factor.type,
-      params: await factor.params({ key: this.key })
+      params: await factor.params({ key: factorKey }),
+      salt
     }
     outputs[factor.id] = await factor.output()
     data[factor.id] = factor.data
@@ -98563,10 +98581,9 @@ async function reconstitute (
 
   for (const [index, factor] of Object.values(factors).entries()) {
     const share = shares[index]
-    const salt = crypto.randomBytes(32).toString('base64')
     const stretched = Buffer.isBuffer(material[factor.id])
       ? material[factor.id]
-      : Buffer.from(await hkdf('sha256', data[factor.id], salt, '', 32))
+      : Buffer.from(await hkdf('sha256', data[factor.id], factor.salt, '', 32))
 
     // No longer needed in MFKDF2
     // if (Buffer.byteLength(share) > 32) {
@@ -98578,8 +98595,15 @@ async function reconstitute (
 
     // factor.pad = xor(share, stretched).toString("base64");
     factor.pad = encrypt(share, stretched).toString('base64')
-    factor.secret = encrypt(stretched, this.key).toString('base64')
-    factor.salt = factor.salt ? factor.salt : salt
+    const factorKey = await hkdf(
+      'sha256',
+      this.key,
+      factor.salt,
+      'mfkdf2:factor:' + factor.id,
+      32
+    )
+    factor.secret = encrypt(stretched, factorKey).toString('base64')
+    // factor.salt = factor.salt ? factor.salt : salt
     newFactors.push(factor)
   }
 
@@ -99608,7 +99632,15 @@ async function key (policy, factors, options) {
 
   for (const [index, factor] of newFactors.entries()) {
     if (typeof factor === 'function') {
-      newPolicy.factors[index].params = await factor({ key })
+      const factorKey = await hkdf(
+        'sha256',
+        key,
+        newPolicy.factors[index].salt,
+        'mfkdf2:factor:' + newPolicy.factors[index].id,
+        32
+      )
+
+      newPolicy.factors[index].params = await factor({ key: factorKey })
     }
   }
 
@@ -102283,9 +102315,17 @@ async function key (factors, options) {
     // cipher.setAutoPadding(false)
     // const pad = Buffer.concat([cipher.update(share), cipher.final()])
     const pad = encrypt(share, stretched)
-    const secret = encrypt(stretched, key)
 
-    const params = await factor.params({ key })
+    const factorKey = await hkdf(
+      'sha256',
+      key,
+      salt,
+      'mfkdf2:factor:' + factor.id,
+      32
+    )
+    const secret = encrypt(stretched, factorKey)
+
+    const params = await factor.params({ key: factorKey })
     outputs[factor.id] = await factor.output()
     policy.factors.push({
       id: factor.id,
