@@ -7,6 +7,8 @@ chai.should()
 const mfkdf = require('../../src')
 const { suite, test } = require('mocha')
 const crypto = require('crypto')
+const { hkdf } = require('@panva/hkdf')
+const xor = require('buffer-xor')
 
 suite('mfkdf2/security', () => {
   suite('factor-fungibility', () => {
@@ -84,6 +86,76 @@ suite('mfkdf2/security', () => {
         .combine(shares3.slice(0, 3), 3, 3)
         .toString('hex')
         .should.equal(secret.toString('hex'))
+    })
+  })
+
+  suite('share-encryption', () => {
+    test('correct', async () => {
+      const setup = await mfkdf.setup.key([
+        await mfkdf.setup.factors.password('password1', { id: 'password1' }),
+        await mfkdf.setup.factors.password('password2', { id: 'password2' })
+      ])
+
+      const materialp1 = await mfkdf.derive.factors.password('password1')(
+        setup.policy.factors[0].params
+      )
+      const padp1 = Buffer.from(setup.policy.factors[0].pad, 'base64')
+      const stretchedp1 = Buffer.from(
+        await hkdf(
+          'sha256',
+          materialp1.data,
+          setup.policy.factors[0].salt,
+          '',
+          32
+        )
+      )
+      const sharep1 = xor(padp1, stretchedp1)
+
+      const derive = await mfkdf.policy.derive(setup.policy, {
+        password1: mfkdf.derive.factors.password('password1'),
+        password2: mfkdf.derive.factors.password('password2')
+      })
+      derive.key.toString('hex').should.equal(setup.key.toString('hex'))
+
+      await derive.recoverFactor(
+        await mfkdf.setup.factors.password('newPassword1', { id: 'password1' })
+      )
+      const derive2f = await mfkdf.policy.derive(derive.policy, {
+        password1: mfkdf.derive.factors.password('password1'),
+        password2: mfkdf.derive.factors.password('password2')
+      })
+      derive2f.key.toString('hex').should.not.equal(setup.key.toString('hex'))
+      const derive2 = await mfkdf.policy.derive(derive.policy, {
+        password1: mfkdf.derive.factors.password('newPassword1'),
+        password2: mfkdf.derive.factors.password('password2')
+      })
+      derive2.key.toString('hex').should.equal(setup.key.toString('hex'))
+
+      const materialp3 = await mfkdf.derive.factors.password('newPassword1')(
+        derive.policy.factors[0].params
+      )
+      const padp3 = Buffer.from(derive.policy.factors[0].pad, 'base64')
+      const stretchedp3 = Buffer.from(
+        await hkdf(
+          'sha256',
+          materialp3.data,
+          derive.policy.factors[0].salt,
+          '',
+          32
+        )
+      )
+      const sharep3 = xor(padp3, stretchedp3)
+
+      await derive2.recoverFactor(
+        await mfkdf.setup.factors.password('newPassword2', { id: 'password1' })
+      )
+      const derive3 = await mfkdf.policy.derive(derive2.policy, {
+        password1: mfkdf.derive.factors.password('newPassword2'),
+        password2: mfkdf.derive.factors.password('password2')
+      })
+      derive3.key.toString('hex').should.equal(setup.key.toString('hex'))
+
+      sharep1.should.not.equal(sharep3)
     })
   })
 })

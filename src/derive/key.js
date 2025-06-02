@@ -14,9 +14,10 @@ const combine = require('../secrets/combine').combine
 const recover = require('../secrets/recover').recover
 const kdf = require('../kdf').kdf
 const { hkdf } = require('@panva/hkdf')
-const xor = require('buffer-xor')
+// const xor = require("buffer-xor");
 const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
 const kdfSetup = require('../setup/kdf').kdf
+const { decrypt } = require('../crypt')
 
 /**
  * Derive a key from multiple factors of input
@@ -79,6 +80,7 @@ async function key (policy, factors, options) {
         const stretched = Buffer.from(
           await hkdf('sha256', material.data, factor.salt, '', 32)
         )
+
         // No longer needed in MFKDF2
         // if (Buffer.byteLength(pad) > 32) {
         //   stretched = Buffer.concat([
@@ -87,7 +89,15 @@ async function key (policy, factors, options) {
         //   ])
         // }
 
-        share = xor(pad, stretched)
+        // share = xor(pad, stretched)
+        // const decipher = crypto.createDecipheriv(
+        //   'AES-256-ECB',
+        //   stretched,
+        //   null
+        // )
+        // decipher.setAutoPadding(false)
+        // share = Buffer.concat([decipher.update(pad), decipher.final()])
+        share = decrypt(pad, stretched)
       }
 
       shares.push(share)

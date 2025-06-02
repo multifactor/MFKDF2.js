@@ -9,9 +9,10 @@
  */
 
 const { hkdf } = require('@panva/hkdf')
-const xor = require('buffer-xor')
+// const xor = require("buffer-xor");
 const share = require('../../secrets/share').share
 const crypto = require('crypto')
+const { encrypt, decrypt } = require('../../crypt')
 
 /**
  * Change the threshold of factors needed to derive a multi-factor derived key
@@ -318,11 +319,15 @@ async function reconstitute (
   const data = {}
 
   // add existing factors
-  for (const [index, factor] of this.policy.factors.entries()) {
+  for (const factor of this.policy.factors.values()) {
     factors[factor.id] = factor
-    const pad = Buffer.from(factor.pad, 'base64')
-    const share = this.shares[index]
-    const factorMaterial = xor(pad, share)
+    // const pad = Buffer.from(factor.pad, 'base64')
+    // const share = this.shares[index]
+    // const factorMaterial = xor(pad, share);
+    const factorMaterial = decrypt(
+      Buffer.from(factor.secret, 'base64'),
+      this.key
+    )
     // No longer needed in MFKDF2
     // if (Buffer.byteLength(factorMaterial) > 32) {
     //   factorMaterial = factorMaterial.subarray(
@@ -421,7 +426,9 @@ async function reconstitute (
     //   ]);
     // }
 
-    factor.pad = xor(share, stretched).toString('base64')
+    // factor.pad = xor(share, stretched).toString("base64");
+    factor.pad = encrypt(share, stretched).toString('base64')
+    factor.secret = encrypt(stretched, this.key).toString('base64')
     factor.salt = factor.salt ? factor.salt : salt
     newFactors.push(factor)
   }

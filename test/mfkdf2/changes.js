@@ -6,6 +6,7 @@ chai.should()
 
 const mfkdf = require('../../src')
 const { suite, test } = require('mocha')
+const crypto = require('crypto')
 
 suite('mfkdf2/changes', () => {
   suite('key-size-256', () => {
@@ -121,6 +122,23 @@ suite('mfkdf2/changes', () => {
       )
 
       derive.key.toString('hex').should.equal(setup.key.toString('hex'))
+    })
+  })
+
+  suite('encryption', () => {
+    test('aes-256-ecb', async () => {
+      const stretched = await crypto.randomBytes(32)
+      const share = await crypto.randomBytes(32)
+
+      const cipher = crypto.createCipheriv('AES-256-ECB', stretched, null)
+      cipher.setAutoPadding(false)
+      const pad = Buffer.concat([cipher.update(share), cipher.final()])
+
+      const decipher = crypto.createDecipheriv('AES-256-ECB', stretched, null)
+      decipher.setAutoPadding(false)
+      const share2 = Buffer.concat([decipher.update(pad), decipher.final()])
+
+      share2.toString('hex').should.equal(share.toString('hex'))
     })
   })
 })

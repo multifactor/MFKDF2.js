@@ -14,8 +14,9 @@ const crypto = require('crypto')
 const { v4: uuidv4 } = require('uuid')
 const { hkdf } = require('@panva/hkdf')
 const share = require('../secrets/share').share
-const xor = require('buffer-xor')
+// const xor = require('buffer-xor')
 const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
+const { encrypt } = require('../crypt')
 
 /**
  * Validate and setup a configuration for a multi-factor derived key
@@ -173,7 +174,13 @@ async function key (factors, options) {
     //   ])
     // }
 
-    const pad = xor(share, stretched)
+    // const pad = xor(share, stretched);
+    // const cipher = crypto.createCipheriv('AES-256-ECB', stretched, null)
+    // cipher.setAutoPadding(false)
+    // const pad = Buffer.concat([cipher.update(share), cipher.final()])
+    const pad = encrypt(share, stretched)
+    const secret = encrypt(stretched, key)
+
     const params = await factor.params({ key })
     outputs[factor.id] = await factor.output()
     policy.factors.push({
@@ -181,7 +188,8 @@ async function key (factors, options) {
       type: factor.type,
       pad: pad.toString('base64'),
       params,
-      salt
+      salt,
+      secret: secret.toString('base64')
     })
   }
 
