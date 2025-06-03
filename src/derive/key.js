@@ -18,6 +18,8 @@ const { hkdf } = require('@panva/hkdf')
 const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
 const kdfSetup = require('../setup/kdf').kdf
 const { decrypt } = require('../crypt')
+const { extract } = require('../integrity')
+const crypto = require('crypto')
 
 /**
  * Derive a key from multiple factors of input
@@ -44,13 +46,14 @@ const { decrypt } = require('../crypt')
  * @param {Object} [options] - Configuration options
  * @param {number} [options.time=2] - Argon2id iterations to use (minimum 2)
  * @param {number} [options.memory=24576] - Argon2id memory to use (minimum 24576)
+ * @param {boolean} [checkIntegrity=false] - Whether to check the integrity of the policy (recommended, but off by default for backwards compatibility)
  * @returns {MFKDFDerivedKey} A multi-factor derived key object
  * @author Multifactor <support@multifactor.com>
  * @since 0.9.0
  * @async
  * @memberOf derive
  */
-async function key (policy, factors, options) {
+async function key (policy, factors, options, checkIntegrity = false) {
   const ajv = new Ajv()
   const valid = ajv.validate(policySchema, policy)
   if (!valid) throw new TypeError('invalid key policy: ' + ajv.errorsText())
@@ -152,6 +155,26 @@ async function key (policy, factors, options) {
     policy.threshold,
     policy.factors.length
   )
+
+  const policyData = await extract(policy)
+  const integrityKey = await hkdf(
+    'sha256',
+    key,
+    policy.salt,
+    'mfkdf2:policy-integrity:hmac',
+    32
+  )
+  const hmac = crypto.createHmac('sha256', integrityKey)
+  hmac.update(policyData)
+  const digest = hmac.digest('base64')
+
+  if (checkIntegrity && policy.hmac !== digest) { throw new TypeError('policy integrity check failed') }
+
+  const newPolicyData = await extract(newPolicy)
+  const newHmac = crypto.createHmac('sha256', integrityKey)
+  newHmac.update(newPolicyData)
+  const newDigest = newHmac.digest('base64')
+  newPolicyData.hmac = newDigest
 
   return new MFKDFDerivedKey(newPolicy, key, secret, originalShares, outputs)
 }

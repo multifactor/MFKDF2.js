@@ -17,6 +17,7 @@ const share = require('../secrets/share').share
 // const xor = require('buffer-xor')
 const MFKDFDerivedKey = require('../classes/MFKDFDerivedKey')
 const { encrypt } = require('../crypt')
+const { extract } = require('../integrity')
 
 /**
  * Validate and setup a configuration for a multi-factor derived key
@@ -200,6 +201,19 @@ async function key (factors, options) {
       secret: secret.toString('base64')
     })
   }
+
+  const policyData = await extract(policy)
+  const integrityKey = await hkdf(
+    'sha256',
+    key,
+    policy.salt,
+    'mfkdf2:policy-integrity:hmac',
+    32
+  )
+
+  const hmac = crypto.createHmac('sha256', integrityKey)
+  hmac.update(policyData)
+  policy.hmac = hmac.digest('base64')
 
   const result = new MFKDFDerivedKey(policy, key, secret, shares, outputs)
 

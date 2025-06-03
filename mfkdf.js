@@ -98163,6 +98163,7 @@ const { hkdf } = __webpack_require__(8213)
 const share = (__webpack_require__(5080).share)
 const crypto = __webpack_require__(5835)
 const { encrypt, decrypt } = __webpack_require__(1841)
+const { extract } = __webpack_require__(2639)
 
 /**
  * Change the threshold of factors needed to derive a multi-factor derived key
@@ -98609,6 +98610,20 @@ async function reconstitute (
 
   this.policy.factors = newFactors
   this.policy.threshold = threshold
+
+  const integrityKey = await hkdf(
+    'sha256',
+    this.key,
+    this.policy.salt,
+    'mfkdf2:policy-integrity:hmac',
+    32
+  )
+  const newPolicyData = await extract(this.policy)
+  const newHmac = crypto.createHmac('sha256', integrityKey)
+  newHmac.update(newPolicyData)
+  const newDigest = newHmac.digest('base64')
+  this.policy.hmac = newDigest
+
   this.outputs = outputs
   this.shares = shares
 }
@@ -99303,11 +99318,11 @@ module.exports.stack = stack
  * @author Multifactor <support@multifactor.com>
  */
 // const xor = require("buffer-xor");
-const speakeasy = __webpack_require__(6881);
-const { decrypt } = __webpack_require__(1841);
+const speakeasy = __webpack_require__(6881)
+const { decrypt } = __webpack_require__(1841)
 
-function mod(n, m) {
-  return ((n % m) + m) % m;
+function mod (n, m) {
+  return ((n % m) + m) % m
 }
 
 /**
@@ -99339,69 +99354,69 @@ function mod(n, m) {
  * @since 0.13.0
  * @memberof derive.factors
  */
-function totp(code, options = {}) {
-  if (!Number.isInteger(code)) throw new TypeError("code must be an integer");
-  if (typeof options.time === "undefined") options.time = Date.now();
+function totp (code, options = {}) {
+  if (!Number.isInteger(code)) throw new TypeError('code must be an integer')
+  if (typeof options.time === 'undefined') options.time = Date.now()
   if (!Number.isInteger(options.time)) {
-    throw new TypeError("time must be an integer");
+    throw new TypeError('time must be an integer')
   }
-  if (options.time <= 0) throw new RangeError("time must be positive");
+  if (options.time <= 0) throw new RangeError('time must be positive')
 
   return async (params) => {
-    const offsets = Buffer.from(params.offsets, "base64");
-    const startCounter = Math.floor(params.start / (params.step * 1000));
-    const nowCounter = Math.floor(options.time / (params.step * 1000));
+    const offsets = Buffer.from(params.offsets, 'base64')
+    const startCounter = Math.floor(params.start / (params.step * 1000))
+    const nowCounter = Math.floor(options.time / (params.step * 1000))
 
-    const index = nowCounter - startCounter;
+    const index = nowCounter - startCounter
 
-    if (index >= params.window) throw new RangeError("TOTP window exceeded");
+    if (index >= params.window) throw new RangeError('TOTP window exceeded')
 
-    var offset = offsets.readUInt32BE(4 * index);
+    let offset = offsets.readUInt32BE(4 * index)
 
     if (options.oracle) {
-      const time = nowCounter * params.step * 1000;
-      offset = mod(offset + options.oracle[time], 10 ** params.digits);
+      const time = nowCounter * params.step * 1000
+      offset = mod(offset + options.oracle[time], 10 ** params.digits)
     }
 
-    const target = mod(offset + code, 10 ** params.digits);
-    const buffer = Buffer.allocUnsafe(4);
-    buffer.writeUInt32BE(target, 0);
+    const target = mod(offset + code, 10 ** params.digits)
+    const buffer = Buffer.allocUnsafe(4)
+    buffer.writeUInt32BE(target, 0)
 
     return {
-      type: "totp",
+      type: 'totp',
       data: buffer,
       params: async ({ key }) => {
-        const pad = Buffer.from(params.pad, "base64");
+        const pad = Buffer.from(params.pad, 'base64')
         // const secret = xor(pad, key.slice(0, Buffer.byteLength(pad)))
-        const secret = decrypt(pad, key).slice(0, params.secretSize);
+        const secret = decrypt(pad, key).slice(0, params.secretSize)
 
-        const time = options.time;
-        const newOffsets = Buffer.allocUnsafe(4 * params.window);
+        const time = options.time
+        const newOffsets = Buffer.allocUnsafe(4 * params.window)
 
-        offsets.copy(newOffsets, 0, 4 * index);
+        offsets.copy(newOffsets, 0, 4 * index)
 
         for (let i = params.window - index; i < params.window; i++) {
-          const counter = Math.floor(time / (params.step * 1000)) + i;
+          const counter = Math.floor(time / (params.step * 1000)) + i
 
           const code = parseInt(
             speakeasy.totp({
-              secret: secret.toString("hex"),
-              encoding: "hex",
+              secret: secret.toString('hex'),
+              encoding: 'hex',
               step: params.step,
               counter,
               algorithm: params.hash,
-              digits: params.digits,
+              digits: params.digits
             })
-          );
+          )
 
-          var offset = mod(target - code, 10 ** params.digits);
+          let offset = mod(target - code, 10 ** params.digits)
 
           if (options.oracle) {
-            const time = counter * params.step * 1000;
-            offset = mod(offset - options.oracle[time], 10 ** params.digits);
+            const time = counter * params.step * 1000
+            offset = mod(offset - options.oracle[time], 10 ** params.digits)
           }
 
-          newOffsets.writeUInt32BE(offset, 4 * i);
+          newOffsets.writeUInt32BE(offset, 4 * i)
         }
 
         return {
@@ -99412,16 +99427,16 @@ function totp(code, options = {}) {
           window: params.window,
           pad: params.pad,
           secretSize: params.secretSize,
-          offsets: newOffsets.toString("base64"),
-        };
+          offsets: newOffsets.toString('base64')
+        }
       },
       output: async () => {
-        return {};
-      },
-    };
-  };
+        return {}
+      }
+    }
+  }
 }
-module.exports.totp = totp;
+module.exports.totp = totp
 
 
 /***/ }),
@@ -99526,6 +99541,8 @@ const { hkdf } = __webpack_require__(8213)
 const MFKDFDerivedKey = __webpack_require__(8310)
 const kdfSetup = (__webpack_require__(6336).kdf)
 const { decrypt } = __webpack_require__(1841)
+const { extract } = __webpack_require__(2639)
+const crypto = __webpack_require__(5835)
 
 /**
  * Derive a key from multiple factors of input
@@ -99552,13 +99569,14 @@ const { decrypt } = __webpack_require__(1841)
  * @param {Object} [options] - Configuration options
  * @param {number} [options.time=2] - Argon2id iterations to use (minimum 2)
  * @param {number} [options.memory=24576] - Argon2id memory to use (minimum 24576)
+ * @param {boolean} [checkIntegrity=false] - Whether to check the integrity of the policy (recommended, but off by default for backwards compatibility)
  * @returns {MFKDFDerivedKey} A multi-factor derived key object
  * @author Multifactor <support@multifactor.com>
  * @since 0.9.0
  * @async
  * @memberOf derive
  */
-async function key (policy, factors, options) {
+async function key (policy, factors, options, checkIntegrity = false) {
   const ajv = new Ajv()
   const valid = ajv.validate(policySchema, policy)
   if (!valid) throw new TypeError('invalid key policy: ' + ajv.errorsText())
@@ -99661,6 +99679,26 @@ async function key (policy, factors, options) {
     policy.factors.length
   )
 
+  const policyData = await extract(policy)
+  const integrityKey = await hkdf(
+    'sha256',
+    key,
+    policy.salt,
+    'mfkdf2:policy-integrity:hmac',
+    32
+  )
+  const hmac = crypto.createHmac('sha256', integrityKey)
+  hmac.update(policyData)
+  const digest = hmac.digest('base64')
+
+  if (checkIntegrity && policy.hmac !== digest) { throw new TypeError('policy integrity check failed') }
+
+  const newPolicyData = await extract(newPolicy)
+  const newHmac = crypto.createHmac('sha256', integrityKey)
+  newHmac.update(newPolicyData)
+  const newDigest = newHmac.digest('base64')
+  newPolicyData.hmac = newDigest
+
   return new MFKDFDerivedKey(newPolicy, key, secret, originalShares, outputs)
 }
 module.exports.key = key
@@ -99691,6 +99729,36 @@ module.exports = {
   stage: __webpack_require__(3976),
   ...__webpack_require__(4861)
 }
+
+
+/***/ }),
+
+/***/ 2639:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+const { createHash } = __webpack_require__(5835)
+
+/**
+ * Extracts the signable content from a policy object.
+ *
+ * @param {Object} [policy] - MFKDF policy object
+ * @returns {Buffer} The extracted data
+ * @author Multifactor <support@multifactor.com>
+ * @since 2.0.0-alpha
+ * @async
+ */
+async function extract (policy) {
+  const hash = createHash('sha256')
+
+  hash.update(JSON.stringify(policy.$id))
+  hash.update(JSON.stringify(policy.threshold))
+  hash.update(JSON.stringify(policy.salt))
+  hash.update(JSON.stringify(policy.factors))
+
+  return hash.digest()
+}
+
+module.exports.extract = extract
 
 
 /***/ }),
@@ -101710,15 +101778,15 @@ module.exports.stack = stack
  *
  * @author Multifactor <support@multifactor.com>
  */
-const defaults = __webpack_require__(9930);
-const crypto = __webpack_require__(5835);
+const defaults = __webpack_require__(9930)
+const crypto = __webpack_require__(5835)
 // const xor = require("buffer-xor");
-const speakeasy = __webpack_require__(6881);
-const random = __webpack_require__(8382);
-const { encrypt } = __webpack_require__(1841);
+const speakeasy = __webpack_require__(6881)
+const random = __webpack_require__(8382)
+const { encrypt } = __webpack_require__(1841)
 
-function mod(n, m) {
-  return ((n % m) + m) % m;
+function mod (n, m) {
+  return ((n % m) + m) % m
 }
 
 /**
@@ -101758,88 +101826,88 @@ function mod(n, m) {
  * @async
  * @memberof setup.factors
  */
-async function totp(options) {
-  options = Object.assign(Object.assign({}, defaults.totp), options);
+async function totp (options) {
+  options = Object.assign(Object.assign({}, defaults.totp), options)
 
-  if (typeof options.id !== "string") {
-    throw new TypeError("id must be a string");
+  if (typeof options.id !== 'string') {
+    throw new TypeError('id must be a string')
   }
-  if (options.id.length === 0) throw new RangeError("id cannot be empty");
+  if (options.id.length === 0) throw new RangeError('id cannot be empty')
   if (!Number.isInteger(options.digits)) {
-    throw new TypeError("digits must be an interger");
+    throw new TypeError('digits must be an interger')
   }
-  if (options.digits < 6) throw new RangeError("digits must be at least 6");
-  if (options.digits > 8) throw new RangeError("digits must be at most 8");
+  if (options.digits < 6) throw new RangeError('digits must be at least 6')
+  if (options.digits > 8) throw new RangeError('digits must be at most 8')
   if (!Number.isInteger(options.step)) {
-    throw new TypeError("step must be an interger");
+    throw new TypeError('step must be an interger')
   }
-  if (options.step < 0) throw new RangeError("step must be positive");
+  if (options.step < 0) throw new RangeError('step must be positive')
   if (!Number.isInteger(options.window)) {
-    throw new TypeError("window must be an interger");
+    throw new TypeError('window must be an interger')
   }
-  if (options.window < 0) throw new RangeError("window must be positive");
-  if (!["sha1", "sha256", "sha512"].includes(options.hash)) {
-    throw new RangeError("unrecognized hash function");
+  if (options.window < 0) throw new RangeError('window must be positive')
+  if (!['sha1', 'sha256', 'sha512'].includes(options.hash)) {
+    throw new RangeError('unrecognized hash function')
   }
   if (
     !Buffer.isBuffer(options.secret) &&
-    typeof options.secret !== "undefined"
+    typeof options.secret !== 'undefined'
   ) {
-    throw new TypeError("secret must be a buffer");
+    throw new TypeError('secret must be a buffer')
   }
-  if (typeof options.time === "undefined") options.time = Date.now();
+  if (typeof options.time === 'undefined') options.time = Date.now()
   if (!Number.isInteger(options.time)) {
-    throw new TypeError("time must be an integer");
+    throw new TypeError('time must be an integer')
   }
-  if (options.time <= 0) throw new RangeError("time must be positive");
+  if (options.time <= 0) throw new RangeError('time must be positive')
 
-  const target = await random(0, 10 ** options.digits - 1);
-  const buffer = Buffer.allocUnsafe(4);
-  buffer.writeUInt32BE(target, 0);
+  const target = await random(0, 10 ** options.digits - 1)
+  const buffer = Buffer.allocUnsafe(4)
+  buffer.writeUInt32BE(target, 0)
 
   return {
-    type: "totp",
+    type: 'totp',
     id: options.id,
     data: buffer,
     entropy: Math.log2(10 ** options.digits),
     params: async ({ key }) => {
-      if (typeof options.secret === "undefined") {
-        options.secret = crypto.randomBytes(Buffer.byteLength(key));
+      if (typeof options.secret === 'undefined') {
+        options.secret = crypto.randomBytes(Buffer.byteLength(key))
       }
 
-      const time = options.time;
-      const offsets = Buffer.allocUnsafe(4 * options.window);
+      const time = options.time
+      const offsets = Buffer.allocUnsafe(4 * options.window)
 
       for (let i = 0; i < options.window; i++) {
-        const counter = Math.floor(time / (options.step * 1000)) + i;
+        const counter = Math.floor(time / (options.step * 1000)) + i
 
         const code = parseInt(
           speakeasy.totp({
-            secret: options.secret.toString("hex"),
-            encoding: "hex",
+            secret: options.secret.toString('hex'),
+            encoding: 'hex',
             step: options.step,
             counter,
             algorithm: options.hash,
-            digits: options.digits,
+            digits: options.digits
           })
-        );
+        )
 
-        let offset = mod(target - code, 10 ** options.digits);
+        let offset = mod(target - code, 10 ** options.digits)
 
         if (options.oracle) {
-          const time = counter * options.step * 1000;
-          offset = mod(offset - options.oracle[time], 10 ** options.digits);
+          const time = counter * options.step * 1000
+          offset = mod(offset - options.oracle[time], 10 ** options.digits)
         }
 
-        offsets.writeUInt32BE(offset, 4 * i);
+        offsets.writeUInt32BE(offset, 4 * i)
       }
 
-      const padding = options.secret.length % 16;
+      const padding = options.secret.length % 16
       const padded = Buffer.concat([
         options.secret,
-        crypto.randomBytes(16 - padding),
-      ]);
-      const pad = encrypt(padded, key);
+        crypto.randomBytes(16 - padding)
+      ])
+      const pad = encrypt(padded, key)
 
       return {
         start: time,
@@ -101849,13 +101917,13 @@ async function totp(options) {
         window: options.window,
         pad,
         secretSize: options.secret.length,
-        offsets: offsets.toString("base64"),
-      };
+        offsets: offsets.toString('base64')
+      }
     },
     output: async () => {
       return {
-        scheme: "otpauth",
-        type: "totp",
+        scheme: 'otpauth',
+        type: 'totp',
         label: options.label,
         secret: options.secret,
         issuer: options.issuer,
@@ -101863,20 +101931,20 @@ async function totp(options) {
         digits: options.digits,
         period: options.step,
         uri: speakeasy.otpauthURL({
-          secret: options.secret.toString("hex"),
-          encoding: "hex",
+          secret: options.secret.toString('hex'),
+          encoding: 'hex',
           label: options.label,
-          type: "totp",
+          type: 'totp',
           issuer: options.issuer,
           algorithm: options.hash,
           digits: options.digits,
-          period: options.step,
-        }),
-      };
-    },
-  };
+          period: options.step
+        })
+      }
+    }
+  }
 }
-module.exports.totp = totp;
+module.exports.totp = totp
 
 
 /***/ }),
@@ -102170,6 +102238,7 @@ const share = (__webpack_require__(5080).share)
 // const xor = require('buffer-xor')
 const MFKDFDerivedKey = __webpack_require__(8310)
 const { encrypt } = __webpack_require__(1841)
+const { extract } = __webpack_require__(2639)
 
 /**
  * Validate and setup a configuration for a multi-factor derived key
@@ -102353,6 +102422,19 @@ async function key (factors, options) {
       secret: secret.toString('base64')
     })
   }
+
+  const policyData = await extract(policy)
+  const integrityKey = await hkdf(
+    'sha256',
+    key,
+    policy.salt,
+    'mfkdf2:policy-integrity:hmac',
+    32
+  )
+
+  const hmac = crypto.createHmac('sha256', integrityKey)
+  hmac.update(policyData)
+  policy.hmac = hmac.digest('base64')
 
   const result = new MFKDFDerivedKey(policy, key, secret, shares, outputs)
 
@@ -102830,7 +102912,7 @@ module.exports = JSON.parse('{"2.16.840.1.101.3.4.1.1":"aes-128-ecb","2.16.840.1
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"$schema":"http://json-schema.org/draft-07/schema","$id":"https://mfkdf.com/schema/v2.0.0/policy.json","type":"object","title":"Multi-Factor Derived Key Policy Schema","description":"A multi-factor derived key policy defines the factors and methods used to derive a key via multi-factor key derivation.","required":["threshold","salt","factors","$id","$schema"],"properties":{"$schema":{"type":"string","title":"Key Schema","description":"Link to the version of the schema that can validate the key policy."},"$id":{"type":"string","title":"Key ID","description":"String which uniquely identifies this key."},"threshold":{"type":"integer","title":"Factor Threshold","description":"The number of correct factors needed to derive this key."},"salt":{"type":"string","title":"KDF Salt","description":"Base-64 encoded salt value used as additional input to the KDF."},"factors":{"type":"array","title":"Factors","description":"Factors which can be used to derive this key.","items":{"type":"object","title":"Factor","description":"Factor which can be used to derive this key.","required":["id","type","pad","salt","params"],"properties":{"id":{"type":"string","title":"Factor ID","description":"String which uniquely identifies this factor."},"type":{"type":"string","title":"Factor Type","description":"Name of the factor material function to use."},"pad":{"type":"string","title":"Factor Pad","description":"Base-64 encoded intermediate value to combine with factor material."},"salt":{"type":"string","title":"Factor Salt","description":"Base-64 encoded intermediate value to combine with factor material."},"secret":{"type":"string","title":"Factor Secret","description":"Base-64 encrypted factor secret value used to reconstitute key."},"params":{"type":"object","title":"Factor Parameters","description":"Parameters required by chosen factor material function.","required":[]}}}},"secrets":{"type":"array","title":"Secrets","description":"Enveloped secrets encrypted with this key.","items":{"type":"object","title":"Factor","description":"Enveloped secret encrypted with this key.","required":["id","type","value"],"properties":{"id":{"type":"string","title":"Secret ID","description":"String which uniquely identifies this enveloped secret."},"type":{"type":"string","title":"Secret Type","description":"Type of enveloped secret."},"value":{"type":"string","title":"Secret Value","description":"Base-64 encoded ciphertext value encrypted with this key."}}}}}}');
+module.exports = JSON.parse('{"$schema":"http://json-schema.org/draft-07/schema","$id":"https://mfkdf.com/schema/v2.0.0/policy.json","type":"object","title":"Multi-Factor Derived Key Policy Schema","description":"A multi-factor derived key policy defines the factors and methods used to derive a key via multi-factor key derivation.","required":["threshold","salt","factors","$id","$schema"],"properties":{"$schema":{"type":"string","title":"Key Schema","description":"Link to the version of the schema that can validate the key policy."},"$id":{"type":"string","title":"Key ID","description":"String which uniquely identifies this key."},"threshold":{"type":"integer","title":"Factor Threshold","description":"The number of correct factors needed to derive this key."},"salt":{"type":"string","title":"KDF Salt","description":"Base-64 encoded salt value used as additional input to the KDF."},"hmac":{"type":"string","title":"Policy Signature","description":"Base-64 encoded HMAC value used to protect policy integrity."},"factors":{"type":"array","title":"Factors","description":"Factors which can be used to derive this key.","items":{"type":"object","title":"Factor","description":"Factor which can be used to derive this key.","required":["id","type","pad","salt","params"],"properties":{"id":{"type":"string","title":"Factor ID","description":"String which uniquely identifies this factor."},"type":{"type":"string","title":"Factor Type","description":"Name of the factor material function to use."},"pad":{"type":"string","title":"Factor Pad","description":"Base-64 encoded intermediate value to combine with factor material."},"salt":{"type":"string","title":"Factor Salt","description":"Base-64 encoded intermediate value to combine with factor material."},"secret":{"type":"string","title":"Factor Secret","description":"Base-64 encrypted factor secret value used to reconstitute key."},"params":{"type":"object","title":"Factor Parameters","description":"Parameters required by chosen factor material function.","required":[]}}}},"secrets":{"type":"array","title":"Secrets","description":"Enveloped secrets encrypted with this key.","items":{"type":"object","title":"Factor","description":"Enveloped secret encrypted with this key.","required":["id","type","value"],"properties":{"id":{"type":"string","title":"Secret ID","description":"String which uniquely identifies this enveloped secret."},"type":{"type":"string","title":"Secret Type","description":"Type of enveloped secret."},"value":{"type":"string","title":"Secret Value","description":"Base-64 encoded ciphertext value encrypted with this key."}}}}}}');
 
 /***/ })
 

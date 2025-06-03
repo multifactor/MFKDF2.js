@@ -13,6 +13,7 @@ const { hkdf } = require('@panva/hkdf')
 const share = require('../../secrets/share').share
 const crypto = require('crypto')
 const { encrypt, decrypt } = require('../../crypt')
+const { extract } = require('../../integrity')
 
 /**
  * Change the threshold of factors needed to derive a multi-factor derived key
@@ -459,6 +460,20 @@ async function reconstitute (
 
   this.policy.factors = newFactors
   this.policy.threshold = threshold
+
+  const integrityKey = await hkdf(
+    'sha256',
+    this.key,
+    this.policy.salt,
+    'mfkdf2:policy-integrity:hmac',
+    32
+  )
+  const newPolicyData = await extract(this.policy)
+  const newHmac = crypto.createHmac('sha256', integrityKey)
+  newHmac.update(newPolicyData)
+  const newDigest = newHmac.digest('base64')
+  this.policy.hmac = newDigest
+
   this.outputs = outputs
   this.shares = shares
 }

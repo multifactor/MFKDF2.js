@@ -26,6 +26,11 @@
       "title": "KDF Salt",
       "description": "Base-64 encoded salt value used as additional input to the KDF."
     },
+    "hmac": {
+      "type": "string",
+      "title": "Policy Signature",
+      "description": "Base-64 encoded HMAC value used to protect policy integrity."
+    },
     "factors": {
       "type": "array",
       "title": "Factors",
